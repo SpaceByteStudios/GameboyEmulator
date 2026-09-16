@@ -1,0 +1,4 @@
+class CPU {
+public:
+  CPU();
+};

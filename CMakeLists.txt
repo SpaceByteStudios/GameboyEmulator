@@ -10,17 +10,28 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(SDL3 REQUIRED)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
+    "${CMAKE_BINARY_DIR}/bin"
+)
+
+add_subdirectory(
+    external/SDL
+    EXCLUDE_FROM_ALL
+)
 
 add_executable(
     gb_emulator
     src/main.cpp
+    src/renderer.cpp
+    src/gameboy.cpp
+    src/cpu.cpp
+    src/memory.cpp
 )
-
-target_link_libraries(gb_emulator PRIVATE SDL3::SDL3)
 
 target_include_directories(
     gb_emulator 
     PRIVATE
-    include
+    ${PROJECT_SOURCE_DIR}/include
 )
+
+target_link_libraries(gb_emulator PRIVATE SDL3::SDL3)
