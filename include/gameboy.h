@@ -1,4 +1,7 @@
+#pragma once
+
 #include "cpu.h"
+#include "memory.h"
 
 class Gameboy {
 public:
@@ -12,6 +15,7 @@ public:
 
 private:
   CPU cpu;
+  Memory memory;
 
   bool running;
 };

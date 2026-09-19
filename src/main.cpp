@@ -12,6 +12,7 @@ int main() {
   }
 
   Renderer renderer = Renderer();
+  Gameboy gameboy = Gameboy();
 
   bool running = true;
 

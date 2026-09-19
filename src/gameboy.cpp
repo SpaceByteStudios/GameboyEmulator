@@ -1,9 +1,8 @@
 #include "gameboy.h"
+#include "cpu.h"
+#include <memory.h>
 
-Gameboy::Gameboy() {
-  cpu = CPU();
-  running = true;
-}
+Gameboy::Gameboy() : memory(), cpu(memory) { running = true; }
 
 void Gameboy::reset() {}
 
