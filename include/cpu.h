@@ -1,7 +1,9 @@
 #pragma once
 
-#include "memory.h"
 #include <cstdint>
+
+#include "memory.h"
+#include "registers.h"
 
 class CPU {
 public:
@@ -13,17 +15,37 @@ private:
   Memory &memory;
 
   // Accumulator and Flags
-  uint16_t reg_af = 0;
+  Reg16 reg_af;
 
   // General Purpose Registers
-  uint16_t reg_bc = 0;
-  uint16_t reg_de = 0;
-  uint16_t reg_hl = 0;
+  Reg16 reg_bc;
+  Reg16 reg_de;
+  Reg16 reg_hl;
 
   // Stack pointer and Program Counter
-  uint16_t reg_sp = 0;
-  uint16_t reg_pc = 0;
+  uint16_t reg_sp;
+  uint16_t reg_pc;
 
-  uint8_t fetch();
+  uint8_t fetch() const;
   void execute(uint8_t opcode);
+
+  uint8_t readR8(uint8_t r8) const;
+  void writeR8(uint8_t r8, uint8_t value);
+
+  uint16_t readR16(uint8_t r16) const;
+  void writeR16(uint8_t r16, uint16_t value);
+
+  enum class Flag : uint8_t {
+    Z = 7, // Zero
+    N = 6, // Subtract
+    H = 5, // Half carry
+    C = 4, // Carry
+  };
+
+  bool getFlag(Flag flag) const;
+  void setFlag(Flag, bool value);
+
+  void add(uint8_t b, bool carry);
+  void sub(uint8_t b, bool carry);
+  void cp(uint8_t b);
 };
