@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <stdbool.h>
+#include <type_traits>
 
 #include "cpu.h"
 #include "memory.h"
@@ -166,26 +167,91 @@ void CPU::execute(uint8_t opcode) {
 
     // rla
     if (opcode == 0x17) {
+      uint8_t a = reg_af.high();
+      uint8_t c = getFlag(Flag::C);
+      uint8_t last_bit = (a & 0x80) >> 7;
+
+      setFlag(Flag::Z, false);
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, false);
+      setFlag(Flag::C, last_bit);
+
+      reg_af.setHigh((a << 1) + c);
     }
 
     // rra
     if (opcode == 0x1F) {
+      uint8_t a = reg_af.high();
+      uint8_t c = getFlag(Flag::C);
+      uint8_t first_bit = a & 0x01;
+
+      setFlag(Flag::Z, false);
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, false);
+      setFlag(Flag::C, first_bit);
+
+      reg_af.setHigh((a >> 1) + (c << 7));
     }
 
     // daa
     if (opcode == 0x27) {
+      uint8_t a = reg_af.high();
+      uint8_t correction = 0;
+
+      uint8_t n = getFlag(Flag::N);
+      uint8_t h = getFlag(Flag::H);
+      uint8_t c = getFlag(Flag::C);
+
+      if (!n) {
+        // Addition
+        if (h || (a & 0x0F) > 0x09)
+          correction |= 0x06;
+
+        if (c || a > 0x99) {
+          correction |= 0x60;
+          setFlag(Flag::C, true);
+        }
+
+        a += correction;
+      } else {
+        // Subtraction
+        if (h) {
+          correction |= 0x06;
+        }
+
+        if (c) {
+          correction |= 0x60;
+        }
+
+        a -= correction;
+      }
+
+      setFlag(Flag::Z, a == 0);
+      setFlag(Flag::H, false);
+
+      reg_af.setHigh(a);
     }
 
     // cpl
     if (opcode == 0x2F) {
+      reg_af.setHigh(~reg_af.high());
+
+      setFlag(Flag::N, true);
+      setFlag(Flag::H, true);
     }
 
     // scf
     if (opcode == 0x37) {
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, false);
+      setFlag(Flag::C, true);
     }
 
     // ccf
     if (opcode == 0x3F) {
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, false);
+      setFlag(Flag::C, ~getFlag(Flag::C));
     }
   }
 

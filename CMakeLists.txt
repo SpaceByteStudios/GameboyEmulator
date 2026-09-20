@@ -25,6 +25,7 @@ add_executable(
     src/renderer.cpp
     src/gameboy.cpp
     src/cpu.cpp
+    src/registers.cpp
     src/memory.cpp
 )
 
