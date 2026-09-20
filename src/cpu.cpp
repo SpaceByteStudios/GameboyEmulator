@@ -315,6 +315,69 @@ void CPU::execute(uint8_t opcode) {
 
   // Block 3
   if ((opcode & 0xC0) == 0xC0) {
+    // add a, imm8
+    if (opcode == 0xC6) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      add(value, false);
+    }
+
+    // adc a, imm8
+    if (opcode == 0xCE) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      add(value, true);
+    }
+
+    // sub a, imm8
+    if (opcode == 0xD6) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      sub(value, false);
+    }
+
+    // sbc a, imm8
+    if (opcode == 0xDE) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      sub(value, true);
+    }
+
+    // and a, imm8
+    if (opcode == 0xE6) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      reg_af.setHigh(reg_af.high() & value);
+    }
+
+    // xor a, imm8
+    if (opcode == 0xEE) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      reg_af.setHigh(reg_af.high() ^ value);
+    }
+
+    // or a, imm8
+    if (opcode == 0xF6) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      reg_af.setHigh(reg_af.high() | value);
+    }
+
+    // cp a, imm8
+    if (opcode == 0xFE) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      cp(value);
+    }
   }
 }
 
