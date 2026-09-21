@@ -48,4 +48,6 @@ private:
   void add(uint8_t b, bool carry);
   void sub(uint8_t b, bool carry);
   void cp(uint8_t b);
+
+  bool condition(uint8_t cond);
 };

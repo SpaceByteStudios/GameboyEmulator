@@ -253,16 +253,47 @@ void CPU::execute(uint8_t opcode) {
       setFlag(Flag::H, false);
       setFlag(Flag::C, ~getFlag(Flag::C));
     }
+
+    // jr imm8
+    if (opcode == 0x18) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      reg_pc += value;
+    }
+
+    // jr cond, imm8
+    if ((opcode & 0xE7) == 0x20) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      uint8_t cond = (opcode & 0x18) >> 3;
+
+      if (condition(cond)) {
+        reg_pc += value;
+      }
+    }
+
+    // stop
+    if (opcode == 0x10) {
+      // add stop
+      return;
+    }
   }
 
   // Block 1
   // 8-bit reg to reg loads
   if ((opcode & 0xC0) == 0x40) {
+
+    // halt
+    if (opcode == 0x76) {
+      // Add halt exception
+      return;
+    }
+
     // ld r8, r8
     uint8_t dst = (opcode >> 3) & 0x07;
     uint8_t src = opcode & 0x07;
-
-    // Add halt exception
 
     writeR8(dst, readR8(src));
   }
@@ -377,6 +408,300 @@ void CPU::execute(uint8_t opcode) {
       reg_pc += 1;
 
       cp(value);
+    }
+
+    // ret
+    if (opcode == 0xC9) {
+      reg_pc = memory.read16(reg_sp);
+      reg_sp += 1;
+    }
+
+    // ret cond
+    if ((opcode & 0xE7) == 0xC0) {
+      uint8_t cond = (opcode & 0x18) >> 3;
+
+      if (condition(cond)) {
+        reg_pc = memory.read16(reg_sp);
+        reg_sp += 1;
+      }
+    }
+
+    // reti
+    if (opcode == 0xD9) {
+      // add reti
+      return;
+    }
+
+    // jp imm16
+    if (opcode == 0xC3) {
+      uint16_t value = memory.read16(reg_pc);
+      reg_pc += 2;
+
+      reg_sp = value;
+    }
+
+    // jp cond, imm16
+    if ((opcode & 0xE7) == 0xC2) {
+      uint16_t value = memory.read16(reg_pc);
+      reg_pc += 2;
+
+      uint8_t cond = (opcode & 0x18) >> 3;
+
+      if (condition(cond)) {
+        reg_sp = value;
+      }
+    }
+
+    // jp hl
+    if (opcode == 0xE9) {
+      reg_pc = reg_hl.get();
+    }
+
+    // call imm16
+    if (opcode == 0xCD) {
+      uint16_t value = memory.read16(reg_pc);
+      reg_pc += 2;
+
+      reg_sp -= 1;
+      memory.write16(reg_sp, reg_pc);
+
+      reg_pc = value;
+    }
+
+    // call cond, imm16
+    if ((opcode & 0xE7) == 0xC4) {
+      uint16_t value = memory.read16(reg_pc);
+      reg_pc += 2;
+
+      uint8_t cond = (opcode & 0x18) >> 3;
+
+      if (condition(cond)) {
+        reg_sp -= 1;
+        memory.write16(reg_sp, reg_pc);
+
+        reg_pc = value;
+      }
+    }
+
+    // rst tgt3
+    if ((opcode & 0xC7) == 0xC7) {
+      // add rst tgt3
+    }
+
+    // push r16stk
+    if ((opcode & 0xCF) == 0xC5) {
+      uint8_t r16stk = (opcode & 0x30) >> 4;
+
+      uint16_t value = 0;
+
+      switch (r16stk) {
+      case 0:
+        value = reg_bc.get();
+      case 1:
+        value = reg_de.get();
+      case 2:
+        value = reg_hl.get();
+      case 3:
+        value = reg_af.get();
+      }
+
+      reg_sp -= 1;
+      memory.write16(reg_sp, value);
+    }
+
+    // pop r16stk
+    if ((opcode & 0xCF) == 0xC1) {
+      uint8_t r16stk = (opcode & 0x30) >> 4;
+
+      uint16_t value = memory.read16(reg_sp);
+      reg_sp += 1;
+
+      switch (r16stk) {
+      case 0:
+        reg_bc.set(value);
+      case 1:
+        reg_de.set(value);
+      case 2:
+        reg_hl.set(value);
+      case 3:
+        reg_af.set(value);
+      }
+    }
+
+    // 0xCB prefix
+    if (opcode == 0xCB) {
+      reg_pc += 1;
+      uint8_t next_opcode = fetch();
+      reg_pc += 1;
+
+      uint8_t reg = next_opcode & 0x07;
+      uint8_t bit = (next_opcode & 0x38) >> 3;
+
+      uint8_t value = readR8(reg);
+
+      // rlc r8
+      if ((next_opcode & 0xF8) == 0x00) {
+        uint8_t last_bit = (value & 0x80) >> 7;
+
+        setFlag(Flag::Z, false);
+        setFlag(Flag::N, false);
+        setFlag(Flag::H, false);
+        setFlag(Flag::C, last_bit);
+
+        writeR8(reg, (value << 1) + last_bit);
+      }
+
+      // rrc r8
+      if ((next_opcode & 0xF8) == 0x08) {
+        uint8_t first_bit = value & 0x01;
+
+        setFlag(Flag::Z, false);
+        setFlag(Flag::N, false);
+        setFlag(Flag::H, false);
+        setFlag(Flag::C, first_bit);
+
+        writeR8(reg, (value >> 1) + (first_bit << 7));
+      }
+
+      // rl r8
+      if ((next_opcode & 0xF8) == 0x10) {
+        uint8_t c = getFlag(Flag::C);
+        uint8_t last_bit = (value & 0x80) >> 7;
+
+        setFlag(Flag::Z, false);
+        setFlag(Flag::N, false);
+        setFlag(Flag::H, false);
+        setFlag(Flag::C, last_bit);
+
+        writeR8(reg, (value << 1) + c);
+      }
+
+      // rr r8
+      if ((next_opcode & 0xF8) == 0x18) {
+        uint8_t c = getFlag(Flag::C);
+        uint8_t first_bit = value & 0x01;
+
+        setFlag(Flag::Z, false);
+        setFlag(Flag::N, false);
+        setFlag(Flag::H, false);
+        setFlag(Flag::C, first_bit);
+
+        writeR8(reg, (value >> 1) + (c << 7));
+      }
+
+      // sla r8
+      if ((next_opcode & 0xF8) == 0x20) {
+        uint8_t last_bit = (value & 0x80) >> 7;
+
+        setFlag(Flag::Z, false);
+        setFlag(Flag::N, false);
+        setFlag(Flag::H, false);
+        setFlag(Flag::C, last_bit);
+
+        writeR8(reg, value << 1);
+      }
+
+      // sra r8
+      if ((next_opcode & 0xF8) == 0x28) {
+        uint8_t first_bit = value & 0x01;
+        uint8_t last_bit = (value & 0x80);
+
+        setFlag(Flag::Z, false);
+        setFlag(Flag::N, false);
+        setFlag(Flag::H, false);
+        setFlag(Flag::C, first_bit);
+
+        writeR8(reg, (value >> 1) + last_bit);
+      }
+
+      // swap r8
+      if ((next_opcode & 0xF8) == 0x30) {
+        uint8_t upper_bits = value & 0xF0;
+        uint8_t lower_bits = value & 0x0F;
+
+        writeR8(reg, (upper_bits >> 4) + (lower_bits << 4));
+      }
+
+      // srl r8
+      if ((next_opcode & 0xF8) == 0x38) {
+        uint8_t first_bit = value & 0x01;
+
+        setFlag(Flag::Z, false);
+        setFlag(Flag::N, false);
+        setFlag(Flag::H, false);
+        setFlag(Flag::C, first_bit);
+
+        writeR8(reg, value >> 1);
+      }
+
+      // bit b3, r8
+      if ((next_opcode & 0xC0) == 0x40) {
+        setFlag(Flag::N, false);
+        setFlag(Flag::H, true);
+
+        if ((value >> bit) & 0x01) {
+          setFlag(Flag::Z, false);
+        } else {
+          setFlag(Flag::Z, true);
+        }
+      }
+
+      // res b3, r8
+      if ((next_opcode & 0xC0) == 0x40) {
+        uint8_t mask = ~(0x01 << bit);
+        writeR8(reg, value & mask);
+      }
+
+      // set b3, r8
+      if ((next_opcode & 0xC0) == 0x40) {
+        writeR8(reg, value | (0x01 << bit));
+      }
+    }
+
+    // ldh [c], a
+    if (opcode == 0xE2) {
+      uint16_t address = 0xFF00 + reg_bc.low();
+      memory.write(address, reg_af.high());
+    }
+
+    // ldh [imm8], a
+    if (opcode == 0xE0) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      uint16_t address = 0xFF00 + value;
+      memory.write(address, reg_af.high());
+    }
+
+    // ldh [imm16], a
+    if (opcode == 0xEA) {
+      uint16_t address = memory.read16(reg_pc);
+      reg_pc += 2;
+
+      memory.write(address, reg_af.high());
+    }
+
+    // ldh a, [c]
+    if (opcode == 0xF2) {
+      uint16_t address = 0xFF00 + reg_bc.low();
+      reg_af.setHigh(memory.read(address));
+    }
+
+    // ldh a, [imm8]
+    if (opcode == 0xF0) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      uint16_t address = 0xFF00 + value;
+      reg_af.setHigh(memory.read(address));
+    }
+
+    // ld a, [imm16]
+    if (opcode == 0xF2) {
+      uint16_t address = memory.read16(reg_pc);
+      reg_pc += 2;
+
+      reg_af.setHigh(memory.read(address));
     }
   }
 }
@@ -529,4 +854,19 @@ void CPU::cp(uint8_t b) {
   setFlag(Flag::N, true);
   setFlag(Flag::H, (a & 0x0F) < ((b & 0x0F)));
   setFlag(Flag::C, static_cast<uint16_t>(a) < static_cast<uint16_t>(b));
+}
+
+bool CPU::condition(uint8_t cond) {
+  switch (cond) {
+  case 0:
+    return !getFlag(Flag::Z);
+  case 1:
+    return getFlag(Flag::Z);
+  case 2:
+    return !getFlag(Flag::C);
+  case 3:
+    return getFlag(Flag::C);
+  default:
+    return false;
+  }
 }
