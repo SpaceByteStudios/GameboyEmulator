@@ -703,6 +703,51 @@ void CPU::execute(uint8_t opcode) {
 
       reg_af.setHigh(memory.read(address));
     }
+
+    // add sp, imm8
+    if (opcode == 0xE8) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      uint16_t result = reg_sp + value;
+
+      setFlag(Flag::Z, false);
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, (reg_sp & 0x0F) + (value & 0x0F) > 0x0F);
+      setFlag(Flag::C, result > 0xFF);
+
+      reg_sp = result;
+    }
+
+    // ld hl, sp + imm8
+    if (opcode == 0xF8) {
+      uint8_t value = memory.read(reg_pc);
+      reg_pc += 1;
+
+      uint16_t result = reg_sp + value;
+
+      setFlag(Flag::Z, false);
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, (reg_sp & 0x0F) + (value & 0x0F) > 0x0F);
+      setFlag(Flag::C, result > 0xFF);
+
+      reg_sp = result;
+
+      writeR16(0x02, result);
+    }
+
+    // ld sp, hl
+    if (opcode == 0xF9) {
+      writeR16(0x02, reg_sp);
+    }
+
+    // ei
+    if (opcode == 0xFB) {
+    }
+
+    // di
+    if (opcode == 0xF3) {
+    }
   }
 }
 
