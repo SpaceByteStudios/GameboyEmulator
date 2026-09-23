@@ -11,6 +11,9 @@ public:
 
   void step();
 
+  void print_state();
+  bool is_halted();
+
 private:
   Memory &memory;
 
@@ -25,6 +28,9 @@ private:
   // Stack pointer and Program Counter
   uint16_t reg_sp;
   uint16_t reg_pc;
+
+  bool IME;
+  bool halted;
 
   uint8_t fetch() const;
   void execute(uint8_t opcode);
@@ -49,5 +55,5 @@ private:
   void sub(uint8_t b, bool carry);
   void cp(uint8_t b);
 
-  bool condition(uint8_t cond);
+  bool condition(uint8_t cond) const;
 };

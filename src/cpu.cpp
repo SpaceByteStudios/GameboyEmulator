@@ -1,23 +1,69 @@
 #include <cstdint>
+#include <iostream>
 #include <stdbool.h>
-#include <type_traits>
 
 #include "cpu.h"
 #include "memory.h"
 
-CPU::CPU(Memory &memory) : memory(memory) {}
+CPU::CPU(Memory &memory) : memory(memory) {
+  reg_af.set(0x01B0);
+  reg_bc.set(0x0013);
+  reg_de.set(0x00D8);
+  reg_hl.set(0x014D);
+
+  reg_sp = 0xFFFE;
+  reg_pc = 0x0100;
+
+  IME = false;
+  halted = false;
+}
 
 void CPU::step() {
+  if (halted) {
+    return;
+  }
+
   uint8_t opcode = fetch();
   reg_pc += 1;
 
   execute(opcode);
 }
 
+void CPU::print_state() {
+  if (halted) {
+    return;
+  }
+
+  // 1. Fetch values as uint32_t to completely eliminate sign-extension
+  uint32_t a = reg_af.high() & 0xFF;
+  uint32_t f = reg_af.low() & 0xFF;
+  uint32_t b = reg_bc.high() & 0xFF;
+  uint32_t c = reg_bc.low() & 0xFF;
+  uint32_t d = reg_de.high() & 0xFF;
+  uint32_t e = reg_de.low() & 0xFF;
+  uint32_t h = reg_hl.high() & 0xFF;
+  uint32_t l = reg_hl.low() & 0xFF;
+
+  uint32_t m0 = memory.read(reg_pc + 0) & 0xFF;
+  uint32_t m1 = memory.read(reg_pc + 1) & 0xFF;
+  uint32_t m2 = memory.read(reg_pc + 2) & 0xFF;
+  uint32_t m3 = memory.read(reg_pc + 3) & 0xFF;
+
+  // 2. Format with sprintf or snprintf for guaranteed fixed-width output
+  char buf[128];
+  std::snprintf(buf, sizeof(buf),
+                "A:%02X F:%02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X "
+                "SP:%04X PC:%04X PCMEM:%02X,%02X,%02X,%02X\n",
+                a, f, b, c, d, e, h, l, reg_sp, reg_pc, m0, m1, m2, m3);
+
+  std::cout << buf;
+}
+
+bool CPU::is_halted() { return halted; }
+
 uint8_t CPU::fetch() const { return memory.read(reg_pc); }
 
 void CPU::execute(uint8_t opcode) {
-
   // Block 0
   if ((opcode & 0xC0) == 0x00) {
     // NOP
@@ -26,7 +72,7 @@ void CPU::execute(uint8_t opcode) {
     }
 
     // ld r16, imm16
-    if ((opcode & 0x0F) == 0x01) {
+    if ((opcode & 0xCF) == 0x01) {
       uint16_t dst = (opcode >> 4) & 0x03;
       uint16_t value = memory.read16(reg_pc);
       reg_pc += 2;
@@ -35,7 +81,7 @@ void CPU::execute(uint8_t opcode) {
     }
 
     // ld [r16mem], a
-    if ((opcode & 0x0F) == 0x02) {
+    if ((opcode & 0xCF) == 0x02) {
       uint16_t address = 0;
 
       switch (opcode >> 4) {
@@ -59,7 +105,7 @@ void CPU::execute(uint8_t opcode) {
     }
 
     // ld a, [r16mem]
-    if ((opcode & 0x0F) == 0x0A) {
+    if ((opcode & 0xCF) == 0x0A) {
       uint16_t address = 0;
 
       switch (opcode >> 4) {
@@ -91,46 +137,62 @@ void CPU::execute(uint8_t opcode) {
     }
 
     // inc r16
-    if ((opcode & 0x0F) == 0x03) {
+    if ((opcode & 0xCF) == 0x03) {
       uint8_t reg = opcode >> 4;
       writeR16(reg, readR16(reg) + 1);
     }
 
     // dec r16
-    if ((opcode & 0x0F) == 0x0B) {
+    if ((opcode & 0xCF) == 0x0B) {
       uint8_t reg = opcode >> 4;
       writeR16(reg, readR16(reg) - 1);
     }
 
     // add hl, r16
-    if ((opcode & 0x0F) == 0x09) {
+    if ((opcode & 0xCF) == 0x09) {
       uint8_t reg = opcode >> 4;
 
       uint32_t result = static_cast<uint32_t>(reg_hl.get()) +
                         static_cast<uint32_t>(readR16(reg));
 
-      reg_hl.set(static_cast<uint16_t>(result));
-
       setFlag(Flag::N, false);
       setFlag(Flag::H,
               ((reg_hl.get() & 0x0FFF) + (readR16(reg) & 0x0FFF)) > 0x0FFF);
       setFlag(Flag::C, result > 0xFFFF);
+
+      reg_hl.set(static_cast<uint16_t>(result));
     }
 
     // inc r8
-    if ((opcode & 0x07) == 0x04) {
+    if ((opcode & 0xC7) == 0x04) {
       uint8_t reg = opcode >> 3;
-      writeR8(reg, readR8(reg) + 1);
+
+      uint8_t value = readR8(reg);
+      uint8_t result = value + 1;
+
+      writeR8(reg, result);
+
+      setFlag(Flag::Z, result == 0);
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, (value & 0x0F) == 0x0F);
     }
 
     // dec r8
-    if ((opcode & 0x07) == 0x05) {
+    if ((opcode & 0xC7) == 0x05) {
       uint8_t reg = opcode >> 3;
-      writeR8(reg, readR8(reg) - 1);
+
+      uint8_t value = readR8(reg);
+      uint8_t result = value - 1;
+
+      writeR8(reg, result);
+
+      setFlag(Flag::Z, result == 0);
+      setFlag(Flag::N, true);
+      setFlag(Flag::H, (value & 0x0F) == 0x00);
     }
 
     // ld r8, imm8
-    if ((opcode & 0x07) == 0x06) {
+    if ((opcode & 0xC7) == 0x06) {
       uint8_t reg = opcode >> 3;
 
       uint8_t value = memory.read(reg_pc);
@@ -251,12 +313,12 @@ void CPU::execute(uint8_t opcode) {
     if (opcode == 0x3F) {
       setFlag(Flag::N, false);
       setFlag(Flag::H, false);
-      setFlag(Flag::C, ~getFlag(Flag::C));
+      setFlag(Flag::C, !getFlag(Flag::C));
     }
 
     // jr imm8
     if (opcode == 0x18) {
-      uint8_t value = memory.read(reg_pc);
+      int8_t value = memory.read(reg_pc);
       reg_pc += 1;
 
       reg_pc += value;
@@ -264,7 +326,7 @@ void CPU::execute(uint8_t opcode) {
 
     // jr cond, imm8
     if ((opcode & 0xE7) == 0x20) {
-      uint8_t value = memory.read(reg_pc);
+      int8_t value = memory.read(reg_pc);
       reg_pc += 1;
 
       uint8_t cond = (opcode & 0x18) >> 3;
@@ -287,7 +349,7 @@ void CPU::execute(uint8_t opcode) {
 
     // halt
     if (opcode == 0x76) {
-      // Add halt exception
+      halted = true;
       return;
     }
 
@@ -310,7 +372,7 @@ void CPU::execute(uint8_t opcode) {
 
     // adc a, r8
     if ((opcode & 0xF8) == 0x88) {
-      add(readR8(reg), true);
+      add(readR8(reg), getFlag(Flag::C));
     }
 
     // sub a, r8
@@ -320,22 +382,37 @@ void CPU::execute(uint8_t opcode) {
 
     // sbc a, r8
     if ((opcode & 0xF8) == 0x98) {
-      sub(readR8(reg), true);
+      sub(readR8(reg), getFlag(Flag::C));
     }
 
     // and a, r8
     if ((opcode & 0xF8) == 0xA0) {
       reg_af.setHigh(reg_af.high() & readR8(reg));
+
+      setFlag(Flag::Z, (reg_af.get() & 0xFF00) == 0);
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, true);
+      setFlag(Flag::C, false);
     }
 
     // xor a, r8
     if ((opcode & 0xF8) == 0xA8) {
       reg_af.setHigh(reg_af.high() ^ readR8(reg));
+
+      setFlag(Flag::Z, (reg_af.get() & 0xFF00) == 0);
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, false);
+      setFlag(Flag::C, false);
     }
 
     // or a, r8
     if ((opcode & 0xF8) == 0xB0) {
       reg_af.setHigh(reg_af.high() | readR8(reg));
+
+      setFlag(Flag::Z, (reg_af.get() & 0xFF00) == 0);
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, false);
+      setFlag(Flag::C, false);
     }
 
     // cp a, r8
@@ -359,7 +436,7 @@ void CPU::execute(uint8_t opcode) {
       uint8_t value = memory.read(reg_pc);
       reg_pc += 1;
 
-      add(value, true);
+      add(value, getFlag(Flag::C));
     }
 
     // sub a, imm8
@@ -375,7 +452,7 @@ void CPU::execute(uint8_t opcode) {
       uint8_t value = memory.read(reg_pc);
       reg_pc += 1;
 
-      sub(value, true);
+      sub(value, getFlag(Flag::C));
     }
 
     // and a, imm8
@@ -384,6 +461,11 @@ void CPU::execute(uint8_t opcode) {
       reg_pc += 1;
 
       reg_af.setHigh(reg_af.high() & value);
+
+      setFlag(Flag::Z, (reg_af.get() & 0xFF00) == 0);
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, true);
+      setFlag(Flag::C, false);
     }
 
     // xor a, imm8
@@ -392,6 +474,11 @@ void CPU::execute(uint8_t opcode) {
       reg_pc += 1;
 
       reg_af.setHigh(reg_af.high() ^ value);
+
+      setFlag(Flag::Z, (reg_af.get() & 0xFF00) == 0);
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, false);
+      setFlag(Flag::C, false);
     }
 
     // or a, imm8
@@ -400,6 +487,11 @@ void CPU::execute(uint8_t opcode) {
       reg_pc += 1;
 
       reg_af.setHigh(reg_af.high() | value);
+
+      setFlag(Flag::Z, (reg_af.get() & 0xFF00) == 0);
+      setFlag(Flag::N, false);
+      setFlag(Flag::H, false);
+      setFlag(Flag::C, false);
     }
 
     // cp a, imm8
@@ -413,7 +505,7 @@ void CPU::execute(uint8_t opcode) {
     // ret
     if (opcode == 0xC9) {
       reg_pc = memory.read16(reg_sp);
-      reg_sp += 1;
+      reg_sp += 2;
     }
 
     // ret cond
@@ -422,14 +514,16 @@ void CPU::execute(uint8_t opcode) {
 
       if (condition(cond)) {
         reg_pc = memory.read16(reg_sp);
-        reg_sp += 1;
+        reg_sp += 2;
       }
     }
 
     // reti
     if (opcode == 0xD9) {
-      // add reti
-      return;
+      IME = true;
+
+      reg_pc = memory.read16(reg_sp);
+      reg_sp += 2;
     }
 
     // jp imm16
@@ -437,7 +531,7 @@ void CPU::execute(uint8_t opcode) {
       uint16_t value = memory.read16(reg_pc);
       reg_pc += 2;
 
-      reg_sp = value;
+      reg_pc = value;
     }
 
     // jp cond, imm16
@@ -448,7 +542,7 @@ void CPU::execute(uint8_t opcode) {
       uint8_t cond = (opcode & 0x18) >> 3;
 
       if (condition(cond)) {
-        reg_sp = value;
+        reg_pc = value;
       }
     }
 
@@ -462,7 +556,7 @@ void CPU::execute(uint8_t opcode) {
       uint16_t value = memory.read16(reg_pc);
       reg_pc += 2;
 
-      reg_sp -= 1;
+      reg_sp -= 2;
       memory.write16(reg_sp, reg_pc);
 
       reg_pc = value;
@@ -476,7 +570,7 @@ void CPU::execute(uint8_t opcode) {
       uint8_t cond = (opcode & 0x18) >> 3;
 
       if (condition(cond)) {
-        reg_sp -= 1;
+        reg_sp -= 2;
         memory.write16(reg_sp, reg_pc);
 
         reg_pc = value;
@@ -485,7 +579,10 @@ void CPU::execute(uint8_t opcode) {
 
     // rst tgt3
     if ((opcode & 0xC7) == 0xC7) {
-      // add rst tgt3
+      reg_sp -= 2;
+      memory.write16(reg_sp, reg_pc);
+
+      reg_pc = opcode & 0x38;
     }
 
     // push r16stk
@@ -497,15 +594,19 @@ void CPU::execute(uint8_t opcode) {
       switch (r16stk) {
       case 0:
         value = reg_bc.get();
+        break;
       case 1:
         value = reg_de.get();
+        break;
       case 2:
         value = reg_hl.get();
+        break;
       case 3:
         value = reg_af.get();
+        break;
       }
 
-      reg_sp -= 1;
+      reg_sp -= 2;
       memory.write16(reg_sp, value);
     }
 
@@ -514,23 +615,26 @@ void CPU::execute(uint8_t opcode) {
       uint8_t r16stk = (opcode & 0x30) >> 4;
 
       uint16_t value = memory.read16(reg_sp);
-      reg_sp += 1;
+      reg_sp += 2;
 
       switch (r16stk) {
       case 0:
         reg_bc.set(value);
+        break;
       case 1:
         reg_de.set(value);
+        break;
       case 2:
         reg_hl.set(value);
+        break;
       case 3:
-        reg_af.set(value);
+        reg_af.set(value & 0xFFF0);
+        break;
       }
     }
 
     // 0xCB prefix
     if (opcode == 0xCB) {
-      reg_pc += 1;
       uint8_t next_opcode = fetch();
       reg_pc += 1;
 
@@ -543,24 +647,28 @@ void CPU::execute(uint8_t opcode) {
       if ((next_opcode & 0xF8) == 0x00) {
         uint8_t last_bit = (value & 0x80) >> 7;
 
-        setFlag(Flag::Z, false);
+        uint8_t result = (value << 1) + last_bit;
+
+        setFlag(Flag::Z, result == 0);
         setFlag(Flag::N, false);
         setFlag(Flag::H, false);
         setFlag(Flag::C, last_bit);
 
-        writeR8(reg, (value << 1) + last_bit);
+        writeR8(reg, result);
       }
 
       // rrc r8
       if ((next_opcode & 0xF8) == 0x08) {
         uint8_t first_bit = value & 0x01;
 
-        setFlag(Flag::Z, false);
+        uint8_t result = (value >> 1) + (first_bit << 7);
+
+        setFlag(Flag::Z, result == 0);
         setFlag(Flag::N, false);
         setFlag(Flag::H, false);
         setFlag(Flag::C, first_bit);
 
-        writeR8(reg, (value >> 1) + (first_bit << 7));
+        writeR8(reg, result);
       }
 
       // rl r8
@@ -568,12 +676,14 @@ void CPU::execute(uint8_t opcode) {
         uint8_t c = getFlag(Flag::C);
         uint8_t last_bit = (value & 0x80) >> 7;
 
-        setFlag(Flag::Z, false);
+        uint8_t result = (value << 1) + c;
+
+        setFlag(Flag::Z, result == 0);
         setFlag(Flag::N, false);
         setFlag(Flag::H, false);
         setFlag(Flag::C, last_bit);
 
-        writeR8(reg, (value << 1) + c);
+        writeR8(reg, result);
       }
 
       // rr r8
@@ -581,24 +691,28 @@ void CPU::execute(uint8_t opcode) {
         uint8_t c = getFlag(Flag::C);
         uint8_t first_bit = value & 0x01;
 
-        setFlag(Flag::Z, false);
+        uint8_t result = (value >> 1) + (c << 7);
+
+        setFlag(Flag::Z, result == 0);
         setFlag(Flag::N, false);
         setFlag(Flag::H, false);
         setFlag(Flag::C, first_bit);
 
-        writeR8(reg, (value >> 1) + (c << 7));
+        writeR8(reg, result);
       }
 
       // sla r8
       if ((next_opcode & 0xF8) == 0x20) {
         uint8_t last_bit = (value & 0x80) >> 7;
 
-        setFlag(Flag::Z, false);
+        uint8_t result = value << 1;
+
+        setFlag(Flag::Z, result == 0);
         setFlag(Flag::N, false);
         setFlag(Flag::H, false);
         setFlag(Flag::C, last_bit);
 
-        writeR8(reg, value << 1);
+        writeR8(reg, result);
       }
 
       // sra r8
@@ -606,12 +720,14 @@ void CPU::execute(uint8_t opcode) {
         uint8_t first_bit = value & 0x01;
         uint8_t last_bit = (value & 0x80);
 
-        setFlag(Flag::Z, false);
+        uint8_t result = (value >> 1) + last_bit;
+
+        setFlag(Flag::Z, result == 0);
         setFlag(Flag::N, false);
         setFlag(Flag::H, false);
         setFlag(Flag::C, first_bit);
 
-        writeR8(reg, (value >> 1) + last_bit);
+        writeR8(reg, result);
       }
 
       // swap r8
@@ -619,19 +735,28 @@ void CPU::execute(uint8_t opcode) {
         uint8_t upper_bits = value & 0xF0;
         uint8_t lower_bits = value & 0x0F;
 
-        writeR8(reg, (upper_bits >> 4) + (lower_bits << 4));
+        uint8_t result = (upper_bits >> 4) + (lower_bits << 4);
+
+        setFlag(Flag::Z, result == 0);
+        setFlag(Flag::N, false);
+        setFlag(Flag::H, false);
+        setFlag(Flag::C, false);
+
+        writeR8(reg, result);
       }
 
       // srl r8
       if ((next_opcode & 0xF8) == 0x38) {
         uint8_t first_bit = value & 0x01;
 
-        setFlag(Flag::Z, false);
+        uint8_t result = value >> 1;
+
+        setFlag(Flag::Z, result == 0);
         setFlag(Flag::N, false);
         setFlag(Flag::H, false);
         setFlag(Flag::C, first_bit);
 
-        writeR8(reg, value >> 1);
+        writeR8(reg, result);
       }
 
       // bit b3, r8
@@ -647,13 +772,13 @@ void CPU::execute(uint8_t opcode) {
       }
 
       // res b3, r8
-      if ((next_opcode & 0xC0) == 0x40) {
+      if ((next_opcode & 0xC0) == 0x80) {
         uint8_t mask = ~(0x01 << bit);
         writeR8(reg, value & mask);
       }
 
       // set b3, r8
-      if ((next_opcode & 0xC0) == 0x40) {
+      if ((next_opcode & 0xC0) == 0xC0) {
         writeR8(reg, value | (0x01 << bit));
       }
     }
@@ -697,7 +822,7 @@ void CPU::execute(uint8_t opcode) {
     }
 
     // ld a, [imm16]
-    if (opcode == 0xF2) {
+    if (opcode == 0xFA) {
       uint16_t address = memory.read16(reg_pc);
       reg_pc += 2;
 
@@ -706,22 +831,20 @@ void CPU::execute(uint8_t opcode) {
 
     // add sp, imm8
     if (opcode == 0xE8) {
-      uint8_t value = memory.read(reg_pc);
+      int8_t value = memory.read(reg_pc);
       reg_pc += 1;
-
-      uint16_t result = reg_sp + value;
 
       setFlag(Flag::Z, false);
       setFlag(Flag::N, false);
       setFlag(Flag::H, (reg_sp & 0x0F) + (value & 0x0F) > 0x0F);
-      setFlag(Flag::C, result > 0xFF);
+      setFlag(Flag::C, (reg_sp & 0xFF) + static_cast<uint8_t>(value) > 0xFF);
 
-      reg_sp = result;
+      reg_sp += value;
     }
 
     // ld hl, sp + imm8
     if (opcode == 0xF8) {
-      uint8_t value = memory.read(reg_pc);
+      int8_t value = memory.read(reg_pc);
       reg_pc += 1;
 
       uint16_t result = reg_sp + value;
@@ -729,24 +852,24 @@ void CPU::execute(uint8_t opcode) {
       setFlag(Flag::Z, false);
       setFlag(Flag::N, false);
       setFlag(Flag::H, (reg_sp & 0x0F) + (value & 0x0F) > 0x0F);
-      setFlag(Flag::C, result > 0xFF);
-
-      reg_sp = result;
+      setFlag(Flag::C, (reg_sp & 0xFF) + static_cast<uint8_t>(value) > 0xFF);
 
       writeR16(0x02, result);
     }
 
     // ld sp, hl
     if (opcode == 0xF9) {
-      writeR16(0x02, reg_sp);
+      reg_sp = readR16(0x02);
     }
 
     // ei
     if (opcode == 0xFB) {
+      IME = true;
     }
 
     // di
     if (opcode == 0xF3) {
+      IME = false;
     }
   }
 }
@@ -901,7 +1024,7 @@ void CPU::cp(uint8_t b) {
   setFlag(Flag::C, static_cast<uint16_t>(a) < static_cast<uint16_t>(b));
 }
 
-bool CPU::condition(uint8_t cond) {
+bool CPU::condition(uint8_t cond) const {
   switch (cond) {
   case 0:
     return !getFlag(Flag::Z);

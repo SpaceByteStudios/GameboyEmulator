@@ -2,12 +2,21 @@
 #include "cpu.h"
 #include <memory.h>
 
-Gameboy::Gameboy() : memory(), cpu(memory) { running = true; }
+Gameboy::Gameboy(const std::string &path) : memory(), cpu(memory) {
+  memory.loadROM(path);
+}
 
 void Gameboy::reset() {}
 
-void Gameboy::run() {}
+void Gameboy::run() {
+  // cpu.print_state();
+  cpu.step();
+}
 
 void Gameboy::draw() {}
 
-bool Gameboy::is_running() { return running; }
+bool Gameboy::is_halted() { return cpu.is_halted(); }
+
+void Gameboy::hexDump(const std::string &filename) const {
+  memory.hexDump(filename);
+}

@@ -6,13 +6,22 @@
 #include "renderer.h"
 
 int main() {
+  Gameboy gameboy = Gameboy("./roms/test_roms/11-op a,(hl).gb");
+
+  while (!gameboy.is_halted()) {
+    gameboy.run();
+  }
+
+  gameboy.hexDump("memory_dump.txt");
+
+  return 0;
+
   if (!SDL_Init(SDL_INIT_VIDEO)) {
     std::cerr << "SDL_Init failed: " << SDL_GetError() << '\n';
     return 1;
   }
 
   Renderer renderer = Renderer();
-  Gameboy gameboy = Gameboy();
 
   bool running = true;
 

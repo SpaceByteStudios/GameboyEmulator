@@ -5,17 +5,17 @@
 
 class Gameboy {
 public:
-  Gameboy();
+  Gameboy(const std::string &path);
 
   void reset();
   void run();
   void draw();
 
-  bool is_running();
+  bool is_halted();
+
+  void hexDump(const std::string &filename) const;
 
 private:
   CPU cpu;
   Memory memory;
-
-  bool running;
 };
