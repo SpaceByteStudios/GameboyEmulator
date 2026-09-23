@@ -9,7 +9,7 @@ Gameboy::Gameboy(const std::string &path) : memory(), cpu(memory) {
 void Gameboy::reset() {}
 
 void Gameboy::run() {
-  // cpu.print_state();
+  cpu.print_state();
   cpu.step();
 }
 

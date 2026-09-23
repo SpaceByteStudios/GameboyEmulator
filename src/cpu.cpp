@@ -15,18 +15,37 @@ CPU::CPU(Memory &memory) : memory(memory) {
   reg_pc = 0x0100;
 
   IME = false;
+  next_IME = false;
+
   halted = false;
 }
 
 void CPU::step() {
+  uint8_t pending = memory.read(0xFF0F) & memory.read(0xFFFF) & 0x1F;
+  if (halted && pending != 0) {
+    halted = false;
+  }
+
   if (halted) {
     return;
+  }
+
+  if (IME && pending) {
+    service_pending(pending);
   }
 
   uint8_t opcode = fetch();
   reg_pc += 1;
 
   execute(opcode);
+
+  if (opcode == 0xF3) {
+    IME = false;
+    next_IME = false;
+  } else if (next_IME) {
+    IME = true;
+    next_IME = false;
+  }
 }
 
 void CPU::print_state() {
@@ -781,6 +800,8 @@ void CPU::execute(uint8_t opcode) {
       if ((next_opcode & 0xC0) == 0xC0) {
         writeR8(reg, value | (0x01 << bit));
       }
+
+      return;
     }
 
     // ldh [c], a
@@ -864,11 +885,12 @@ void CPU::execute(uint8_t opcode) {
 
     // ei
     if (opcode == 0xFB) {
-      IME = true;
+      next_IME = true;
     }
 
     // di
     if (opcode == 0xF3) {
+      next_IME = false;
       IME = false;
     }
   }
@@ -1036,5 +1058,47 @@ bool CPU::condition(uint8_t cond) const {
     return getFlag(Flag::C);
   default:
     return false;
+  }
+}
+
+void CPU::service_pending(uint8_t pending) {
+
+  for (int i = 0; i < 5; i++) {
+    uint8_t bit_value = (pending >> i) & 0x01;
+
+    if (!bit_value) {
+      continue;
+    }
+
+    IME = false;
+
+    memory.write(0xFF0F, memory.read(0xFF0F) & ~(1 << i));
+
+    uint16_t address = 0;
+
+    switch (i) {
+    case 0:
+      address = 0x40;
+      break;
+    case 1:
+      address = 0x48;
+      break;
+    case 2:
+      address = 0x50;
+      break;
+    case 3:
+      address = 0x58;
+      break;
+    case 4:
+      address = 0x60;
+      break;
+    }
+
+    reg_sp -= 2;
+    memory.write16(reg_sp, reg_pc);
+
+    reg_pc = address;
+
+    break;
   }
 }

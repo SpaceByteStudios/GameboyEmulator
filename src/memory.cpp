@@ -8,21 +8,47 @@
 Memory::Memory() = default;
 
 uint8_t Memory::read(uint16_t address) const {
+  // hardcoded VBlank
   if (address == 0xFF44) {
     return 0x90;
+  }
+
+  // IF
+  if (address == 0xFF0F) {
+    return memory[address] & 0x1F;
+  }
+
+  // IE
+  if (address == 0xFFFF) {
+    return memory[address] & 0x1F;
   }
 
   return memory[address];
 }
 
 void Memory::write(uint16_t address, uint8_t value) {
+  // ROM Area
   if (address < 0x8000) {
+    return;
+  }
+
+  // IF
+  if (address == 0xFF0F) {
+    memory[address] = value & 0x1F;
+    return;
+  }
+
+  // IE
+  if (address == 0xFFFF) {
+    memory[address] = value & 0x1F;
+    return;
   }
 
   memory[address] = value;
 
+  // hardcoded Serial to console
   if (address == 0xFF02 && value == 0x81) {
-    // return;
+    return;
 
     std::cout << static_cast<char>(memory[0xFF01]);
     std::cout.flush();

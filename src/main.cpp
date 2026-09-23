@@ -6,7 +6,7 @@
 #include "renderer.h"
 
 int main() {
-  Gameboy gameboy = Gameboy("./roms/test_roms/11-op a,(hl).gb");
+  Gameboy gameboy = Gameboy("./roms/test_roms/02-interrupts.gb");
 
   while (!gameboy.is_halted()) {
     gameboy.run();

@@ -37,3 +37,6 @@ compile_commands.json
 
 # Game Roms :(
 roms/games/
+
+#Logs
+my_log.txt

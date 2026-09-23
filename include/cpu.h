@@ -30,6 +30,8 @@ private:
   uint16_t reg_pc;
 
   bool IME;
+  bool next_IME;
+
   bool halted;
 
   uint8_t fetch() const;
@@ -56,4 +58,6 @@ private:
   void cp(uint8_t b);
 
   bool condition(uint8_t cond) const;
+
+  void service_pending(uint8_t pending);
 };
