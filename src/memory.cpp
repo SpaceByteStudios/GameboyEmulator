@@ -15,7 +15,7 @@ uint8_t Memory::read(uint16_t address) const {
 
   // IF
   if (address == 0xFF0F) {
-    return memory[address] & 0x1F;
+    return memory[address] | 0xE0;
   }
 
   // IE
@@ -29,6 +29,12 @@ uint8_t Memory::read(uint16_t address) const {
 void Memory::write(uint16_t address, uint8_t value) {
   // ROM Area
   if (address < 0x8000) {
+    return;
+  }
+
+  // DIV
+  if (address == 0xFF04) {
+    memory[address] = 0x00;
     return;
   }
 

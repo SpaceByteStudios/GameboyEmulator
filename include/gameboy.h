@@ -2,6 +2,7 @@
 
 #include "cpu.h"
 #include "memory.h"
+#include "timer.h"
 
 class Gameboy {
 public:
@@ -18,4 +19,5 @@ public:
 private:
   CPU cpu;
   Memory memory;
+  Timer timer;
 };

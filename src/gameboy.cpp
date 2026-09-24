@@ -1,8 +1,10 @@
 #include "gameboy.h"
 #include "cpu.h"
+#include "timer.h"
 #include <memory.h>
 
-Gameboy::Gameboy(const std::string &path) : memory(), cpu(memory) {
+Gameboy::Gameboy(const std::string &path)
+    : memory(), cpu(memory), timer(memory) {
   memory.loadROM(path);
 }
 
@@ -10,7 +12,10 @@ void Gameboy::reset() {}
 
 void Gameboy::run() {
   cpu.print_state();
-  cpu.step();
+
+  uint8_t cycles = cpu.step();
+
+  timer.tick(cycles);
 }
 
 void Gameboy::draw() {}

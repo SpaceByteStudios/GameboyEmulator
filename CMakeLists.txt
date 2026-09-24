@@ -27,6 +27,7 @@ add_executable(
     src/cpu.cpp
     src/registers.cpp
     src/memory.cpp
+    src/timer.cpp
 )
 
 target_include_directories(

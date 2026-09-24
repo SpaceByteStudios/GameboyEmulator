@@ -420,6 +420,8 @@ uint8_t CPU::execute(uint8_t opcode) {
     if (opcode == 0x10) {
       fetch();
       stopped = true;
+      memory.write(0xFF04, 0x00);
+
       return 1;
     }
   }
@@ -770,7 +772,6 @@ uint8_t CPU::execute(uint8_t opcode) {
     // 0xCB prefix
     if (opcode == 0xCB) {
       uint8_t next_opcode = fetch();
-      reg_pc += 1;
 
       uint8_t reg = next_opcode & 0x07;
       uint8_t bit = (next_opcode & 0x38) >> 3;
@@ -1034,6 +1035,8 @@ uint8_t CPU::execute(uint8_t opcode) {
       return 1;
     }
   }
+
+  return 0;
 }
 
 uint8_t CPU::readR8(uint8_t r8) const {
