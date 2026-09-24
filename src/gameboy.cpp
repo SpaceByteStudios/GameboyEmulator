@@ -4,21 +4,15 @@
 #include <memory.h>
 
 Gameboy::Gameboy(const std::string &path)
-    : memory(), cpu(memory), timer(memory) {
-  memory.loadROM(path);
-}
-
-void Gameboy::reset() {}
+    : memory(path), cpu(memory), timer(memory) {}
 
 void Gameboy::run() {
-  cpu.print_state();
+  // cpu.print_state();
 
   uint8_t cycles = cpu.step();
 
   timer.tick(cycles);
 }
-
-void Gameboy::draw() {}
 
 bool Gameboy::is_halted() { return cpu.is_halted(); }
 

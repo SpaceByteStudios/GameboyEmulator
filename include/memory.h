@@ -1,12 +1,13 @@
 #pragma once
 
-#include <array>
+#include "cartridge.h"
 #include <cstdint>
 #include <string>
+#include <vector>
 
 class Memory {
 public:
-  Memory();
+  Memory(const std::string &path);
 
   uint8_t read(uint16_t address) const;
   void write(uint16_t address, uint8_t value);
@@ -19,5 +20,7 @@ public:
   void hexDump(const std::string &filename) const;
 
 private:
-  std::array<uint8_t, 0x10000> memory{};
+  std::vector<uint8_t> memory;
+
+  Cartridge cartridge;
 };

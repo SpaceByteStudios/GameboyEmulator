@@ -1,16 +1,16 @@
 #include "memory.h"
+#include "cartridge.h"
 #include <cstdint>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <stdexcept>
 
-Memory::Memory() = default;
+Memory::Memory(const std::string &path) : memory(0x10000), cartridge(path) {}
 
 uint8_t Memory::read(uint16_t address) const {
-  // hardcoded VBlank
-  if (address == 0xFF44) {
-    return 0x90;
+  // ROM Area
+  if (address < 0x8000) {
+    return cartridge.read(address);
   }
 
   // IF
@@ -23,12 +23,18 @@ uint8_t Memory::read(uint16_t address) const {
     return memory[address] & 0x1F;
   }
 
+  // hardcoded VBlank
+  if (address == 0xFF44) {
+    return 0x90;
+  }
+
   return memory[address];
 }
 
 void Memory::write(uint16_t address, uint8_t value) {
   // ROM Area
   if (address < 0x8000) {
+    cartridge.write(address, value);
     return;
   }
 
@@ -71,16 +77,6 @@ uint16_t Memory::read16(uint16_t address) const {
 void Memory::write16(uint16_t address, uint16_t value) {
   write(address, static_cast<uint8_t>(value & 0xFF));
   write(address + 1, static_cast<uint8_t>(value >> 8));
-}
-
-void Memory::loadROM(const std::string &path) {
-  std::ifstream file(path, std::ios::binary);
-
-  if (!file) {
-    throw std::runtime_error("Failed to open ROM: " + path);
-  }
-
-  file.read(reinterpret_cast<char *>(memory.data()), 0x8000);
 }
 
 void Memory::hexDump(const std::string &filename) const {

@@ -26,8 +26,9 @@ add_executable(
     src/gameboy.cpp
     src/cpu.cpp
     src/registers.cpp
-    src/memory.cpp
     src/timer.cpp
+    src/memory.cpp
+    src/cartridge.cpp
 )
 
 target_include_directories(

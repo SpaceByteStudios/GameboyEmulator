@@ -6,7 +6,9 @@
 #include "renderer.h"
 
 int main() {
-  Gameboy gameboy = Gameboy("./roms/test_roms/02-interrupts.gb");
+  Gameboy gameboy = Gameboy("./roms/games/Tetris.gb");
+
+  return 0;
 
   while (!gameboy.is_halted()) {
     gameboy.run();
