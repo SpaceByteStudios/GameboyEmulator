@@ -9,7 +9,7 @@ class CPU {
 public:
   CPU(Memory &memory);
 
-  void step();
+  uint8_t step();
 
   void print_state();
   bool is_halted();
@@ -33,9 +33,10 @@ private:
   bool next_IME;
 
   bool halted;
+  bool stopped;
 
-  uint8_t fetch() const;
-  void execute(uint8_t opcode);
+  uint8_t fetch();
+  uint8_t execute(uint8_t opcode);
 
   uint8_t readR8(uint8_t r8) const;
   void writeR8(uint8_t r8, uint8_t value);

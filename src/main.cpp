@@ -12,7 +12,7 @@ int main() {
     gameboy.run();
   }
 
-  gameboy.hexDump("memory_dump.txt");
+  // gameboy.hexDump("memory_dump.txt");
 
   return 0;
 
