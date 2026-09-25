@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <stdbool.h>
 
@@ -41,6 +42,19 @@ uint8_t CPU::step() {
   }
 
   uint8_t opcode = fetch();
+
+  if (opcode == 0x40) {
+    printf("TEST BREAKPOINT!\n");
+
+    print_state();
+
+    if (reg_bc.get() == 0x0305 && reg_de.get() == 0x080D &&
+        reg_hl.get() == 0x1522) {
+      printf("PASS!\n");
+    }
+
+    exit(0);
+  }
 
   uint8_t cycles = execute(opcode);
 

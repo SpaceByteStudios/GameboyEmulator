@@ -8,8 +8,6 @@
 int main() {
   Gameboy gameboy = Gameboy("./roms/games/Tetris.gb");
 
-  return 0;
-
   while (!gameboy.is_halted()) {
     gameboy.run();
   }

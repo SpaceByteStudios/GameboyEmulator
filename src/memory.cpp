@@ -38,6 +38,12 @@ void Memory::write(uint16_t address, uint8_t value) {
     return;
   }
 
+  // External RAM Area
+  if ((0xA000 <= address) && (address < 0xC000)) {
+    cartridge.write(address, value);
+    return;
+  }
+
   // DIV
   if (address == 0xFF04) {
     memory[address] = 0x00;
@@ -60,7 +66,7 @@ void Memory::write(uint16_t address, uint8_t value) {
 
   // hardcoded Serial to console
   if (address == 0xFF02 && value == 0x81) {
-    return;
+    // return;
 
     std::cout << static_cast<char>(memory[0xFF01]);
     std::cout.flush();
