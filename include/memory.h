@@ -1,9 +1,12 @@
 #pragma once
 
-#include "cartridge.h"
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
+
+#include "cartridge.h"
+#include "timer.h"
 
 class Memory {
 public:
@@ -23,4 +26,6 @@ private:
   std::vector<uint8_t> memory;
 
   Cartridge cartridge;
+
+  std::unique_ptr<Timer> timer;
 };

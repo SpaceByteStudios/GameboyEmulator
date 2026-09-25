@@ -39,6 +39,7 @@ uint8_t CPU::step() {
 
   if (IME && pending) {
     service_pending(pending);
+    return 5;
   }
 
   uint8_t opcode = fetch();

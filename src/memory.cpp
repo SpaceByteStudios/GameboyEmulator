@@ -5,12 +5,18 @@
 #include <iomanip>
 #include <iostream>
 
-Memory::Memory(const std::string &path) : memory(0x10000), cartridge(path) {}
+Memory::Memory(const std::string &path)
+    : memory(0x10000), cartridge(path), timer(std::make_unique<Timer>(*this)) {}
 
 uint8_t Memory::read(uint16_t address) const {
   // ROM Area
   if (address < 0x8000) {
     return cartridge.read(address);
+  }
+
+  // Timer
+  if (address >= 0xFF04 && address <= 0xFF07) {
+    return timer->read(address);
   }
 
   // IF
@@ -44,9 +50,8 @@ void Memory::write(uint16_t address, uint8_t value) {
     return;
   }
 
-  // DIV
-  if (address == 0xFF04) {
-    memory[address] = 0x00;
+  if (address >= 0xFF04 && address <= 0xFF07) {
+    timer->write(address, value);
     return;
   }
 
