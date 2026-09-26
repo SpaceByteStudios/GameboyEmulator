@@ -1,10 +1,11 @@
 #pragma once
 
+#include "gameboy.h"
 #include <SDL3/SDL.h>
 
 class Renderer {
 public:
-  Renderer();
+  Renderer(Gameboy &gameboy);
   ~Renderer();
 
   void draw();
@@ -12,4 +13,6 @@ public:
 private:
   SDL_Window *window = nullptr;
   SDL_Renderer *renderer = nullptr;
+
+  Gameboy &gameboy;
 };

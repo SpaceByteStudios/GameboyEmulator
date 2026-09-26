@@ -1,11 +1,11 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <string>
 #include <vector>
 
 #include "cartridge.h"
+#include "ppu.h"
 #include "timer.h"
 
 class Memory {
@@ -18,7 +18,8 @@ public:
   uint16_t read16(uint16_t address) const;
   void write16(uint16_t address, uint16_t value);
 
-  void loadROM(const std::string &path);
+  void setTimer(Timer *timer);
+  void setPPU(PPU *ppu);
 
   void hexDump(const std::string &filename) const;
 
@@ -27,5 +28,6 @@ private:
 
   Cartridge cartridge;
 
-  std::unique_ptr<Timer> timer;
+  Timer *timer = nullptr;
+  PPU *ppu = nullptr;
 };

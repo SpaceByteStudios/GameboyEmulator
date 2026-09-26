@@ -1,9 +1,9 @@
 #include <stdexcept>
 
+#include "gameboy.h"
 #include "renderer.h"
 
-Renderer::Renderer() {
-
+Renderer::Renderer(Gameboy &gameboy) : gameboy(gameboy) {
   if (!SDL_CreateWindowAndRenderer("Game Boy Emulator", 800, 720, 0, &window,
                                    &renderer)) {
     SDL_Quit();

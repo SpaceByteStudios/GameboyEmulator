@@ -12,7 +12,6 @@ public:
   uint8_t step();
 
   void print_state();
-  bool is_halted();
 
 private:
   Memory &memory;

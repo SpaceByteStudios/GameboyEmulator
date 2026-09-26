@@ -29,6 +29,7 @@ add_executable(
     src/timer.cpp
     src/memory.cpp
     src/cartridge.cpp
+    src/ppu.cpp
 )
 
 target_include_directories(

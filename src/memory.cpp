@@ -4,9 +4,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <memory.h>
 
-Memory::Memory(const std::string &path)
-    : memory(0x10000), cartridge(path), timer(std::make_unique<Timer>(*this)) {}
+Memory::Memory(const std::string &path) : memory(0x10000), cartridge(path) {}
 
 uint8_t Memory::read(uint16_t address) const {
   // ROM Area
@@ -19,6 +19,11 @@ uint8_t Memory::read(uint16_t address) const {
     return timer->read(address);
   }
 
+  // PPU
+  if (address >= 0xFF40 && address <= 0xFF4B) {
+    return ppu->read(address);
+  }
+
   // IF
   if (address == 0xFF0F) {
     return memory[address] | 0xE0;
@@ -26,7 +31,7 @@ uint8_t Memory::read(uint16_t address) const {
 
   // IE
   if (address == 0xFFFF) {
-    return memory[address] & 0x1F;
+    return memory[address] | 0xE0;
   }
 
   // hardcoded VBlank
@@ -50,8 +55,15 @@ void Memory::write(uint16_t address, uint8_t value) {
     return;
   }
 
+  // Timer
   if (address >= 0xFF04 && address <= 0xFF07) {
     timer->write(address, value);
+    return;
+  }
+
+  // PPU
+  if (address >= 0xFF40 && address <= 0xFF4B) {
+    ppu->write(address, value);
     return;
   }
 
@@ -89,6 +101,10 @@ void Memory::write16(uint16_t address, uint16_t value) {
   write(address, static_cast<uint8_t>(value & 0xFF));
   write(address + 1, static_cast<uint8_t>(value >> 8));
 }
+
+void Memory::setTimer(Timer *timer) { this->timer = timer; }
+
+void Memory::setPPU(PPU *ppu) { this->ppu = ppu; }
 
 void Memory::hexDump(const std::string &filename) const {
   std::ofstream file(filename);
