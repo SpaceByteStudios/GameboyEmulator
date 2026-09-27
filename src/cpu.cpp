@@ -1203,7 +1203,6 @@ bool CPU::condition(uint8_t cond) const {
 }
 
 void CPU::service_pending(uint8_t pending) {
-
   for (int i = 0; i < 5; i++) {
     uint8_t bit_value = (pending >> i) & 0x01;
 
@@ -1218,18 +1217,23 @@ void CPU::service_pending(uint8_t pending) {
     uint16_t address = 0;
 
     switch (i) {
+    // VBlank
     case 0:
       address = 0x40;
       break;
+    // STAT
     case 1:
       address = 0x48;
       break;
+    // Timer
     case 2:
       address = 0x50;
       break;
+    // Serial
     case 3:
       address = 0x58;
       break;
+    // Joypad
     case 4:
       address = 0x60;
       break;

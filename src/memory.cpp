@@ -9,17 +9,47 @@
 Memory::Memory(const std::string &path) : memory(0x10000), cartridge(path) {}
 
 uint8_t Memory::read(uint16_t address) const {
-  // ROM Area
+  // ROM
   if (address < 0x8000) {
     return cartridge.read(address);
   }
 
-  // Timer
+  // VRAM
+  if ((0x8000 <= address) && (address < 0xA000)) {
+    return ppu->read(address);
+  }
+
+  // External RAM
+  if ((0xA000 <= address) && (address < 0xC000)) {
+    return cartridge.read(address);
+  }
+
+  // WRAM
+  if ((0xC000 <= address) && (address < 0xE000)) {
+    return memory[address];
+  }
+
+  // Echo RAM
+  if ((0xE000 <= address) && (address < 0xFE00)) {
+    return memory[address - 0x1000];
+  }
+
+  // OAM
+  if ((0xFE00 <= address) && (address < 0xFEA0)) {
+    return ppu->read(address);
+  }
+
+  // Not Usable
+  if ((0xFEA0 <= address) && (address < 0xFF00)) {
+    return 0xFF;
+  }
+
+  // Timer I/O
   if (address >= 0xFF04 && address <= 0xFF07) {
     return timer->read(address);
   }
 
-  // PPU
+  // PPU I/O
   if (address >= 0xFF40 && address <= 0xFF4B) {
     return ppu->read(address);
   }
@@ -43,25 +73,54 @@ uint8_t Memory::read(uint16_t address) const {
 }
 
 void Memory::write(uint16_t address, uint8_t value) {
-  // ROM Area
+  // ROM
   if (address < 0x8000) {
     cartridge.write(address, value);
     return;
   }
 
-  // External RAM Area
+  // VRAM
+  if ((0x8000 <= address) && (address < 0xA000)) {
+    ppu->write(address, value);
+    return;
+  }
+
+  // External RAM
   if ((0xA000 <= address) && (address < 0xC000)) {
     cartridge.write(address, value);
     return;
   }
 
-  // Timer
+  // WRAM
+  if ((0xC000 <= address) && (address < 0xE000)) {
+    memory[address] = value;
+    return;
+  }
+
+  // Echo RAM
+  if ((0xE000 <= address) && (address < 0xFE00)) {
+    memory[address - 0x1000] = value;
+    return;
+  }
+
+  // OAM
+  if ((0xFE00 <= address) && (address < 0xFEA0)) {
+    ppu->write(address, value);
+    return;
+  }
+
+  // Not Usable
+  if ((0xFEA0 <= address) && (address < 0xFF00)) {
+    return;
+  }
+
+  // Timer I/O
   if (address >= 0xFF04 && address <= 0xFF07) {
     timer->write(address, value);
     return;
   }
 
-  // PPU
+  // PPU I/O
   if (address >= 0xFF40 && address <= 0xFF4B) {
     ppu->write(address, value);
     return;

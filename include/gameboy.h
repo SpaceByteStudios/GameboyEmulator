@@ -10,7 +10,9 @@ class Gameboy {
 public:
   Gameboy(const std::string &path);
 
-  void run();
+  void step();
+
+  std::vector<uint8_t> get_screen();
 
   void hexDump(const std::string &filename) const;
 
