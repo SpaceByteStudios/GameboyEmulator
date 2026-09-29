@@ -17,6 +17,7 @@ Gameboy::Gameboy(const std::string &path)
 void Gameboy::step() {
   // cpu.print_state();
 
+  // cycles are in M Cycles
   uint8_t cycles = cpu.step();
 
   timer->tick(cycles);

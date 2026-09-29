@@ -29,6 +29,12 @@ private:
   // Mode 3 Drawing
   uint8_t ppu_mode;
 
+  // Drawing Variables
+  uint8_t current_x;
+  uint16_t dots_amount;
+  uint8_t mode3_penalty;
+  std::vector<uint8_t> oam_search;
+
   uint8_t LCDC;
   uint8_t STAT;
 
@@ -46,4 +52,7 @@ private:
 
   uint8_t WY;
   uint8_t WX;
+
+  void updateMode();
+  void oamSearch();
 };

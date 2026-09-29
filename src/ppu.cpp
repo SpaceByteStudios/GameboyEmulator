@@ -1,9 +1,37 @@
+#include <vector>
+
+#include "memory.h"
 #include "ppu.h"
 
 PPU::PPU(Memory &memory)
-    : memory(memory), vram(0x2000), oam(0x9F), screen(0x5A00) {}
+    : memory(memory), vram(0x2000), oam(0x9F), screen(0x5A00), oam_search(10) {}
 
-void PPU::tick(uint8_t cycles) {}
+void PPU::tick(uint8_t cycles) {
+  for (uint8_t i = 0; i < cycles * 4; i++) {
+    // Do OAM Search
+    if ((ppu_mode == 2) && (dots_amount == 0)) {
+      oamSearch();
+    }
+
+    // Drawing Mode
+    if ((ppu_mode == 3) && (current_x >= 160)) {
+      // Draw Pixels
+    }
+
+    dots_amount++;
+
+    if (dots_amount >= 456) {
+      dots_amount = 0;
+      LY += 1;
+
+      if (LY >= 154) {
+        LY = 0;
+      }
+    }
+
+    updateMode();
+  }
+}
 
 uint8_t PPU::read(uint16_t address) const {
   // VRAM
@@ -120,4 +148,40 @@ void PPU::write(uint16_t address, uint8_t value) {
   }
 }
 
-std::vector<uint8_t> PPU::get_screen() { return screen; }
+std::vector<uint8_t> PPU::get_screen() {
+  std::vector<uint8_t> new_screen(160 * 144);
+
+  new_screen[0] = 0;
+  new_screen[1] = 1;
+  new_screen[2] = 2;
+  new_screen[3] = 3;
+
+  new_screen[159] = 3;
+  new_screen[160] = 3;
+
+  return new_screen;
+}
+
+void PPU::updateMode() {
+  if ((144 <= LY) && (LY < 154)) {
+    // Request VBlank Interrupt
+    if (ppu_mode != 1) {
+      uint8_t IF = memory.read(0xFF0F);
+      memory.write(0xFF0F, IF | 0x01);
+    }
+
+    ppu_mode = 1;
+  } else {
+    if (dots_amount < 80) {
+      ppu_mode = 2;
+    } else if (dots_amount - 80 < 172 + mode3_penalty) {
+      ppu_mode = 3;
+    } else {
+      ppu_mode = 0;
+    }
+  }
+}
+
+void PPU::oamSearch() {
+  // Do OAM Search
+}

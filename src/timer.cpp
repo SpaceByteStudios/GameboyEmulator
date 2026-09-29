@@ -5,7 +5,7 @@
 Timer::Timer(Memory &memory) : memory(memory) {}
 
 void Timer::tick(uint8_t cycles) {
-  for (uint16_t i = 0; i < static_cast<uint16_t>(cycles) * 4; ++i) {
+  for (uint8_t i = 0; i < cycles * 4; i++) {
     static constexpr uint8_t timer_bits[] = {9, 3, 5, 7};
 
     uint8_t bit = timer_bits[tac & 0x03];

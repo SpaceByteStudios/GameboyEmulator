@@ -6,12 +6,13 @@
 #include "SDL3/SDL_rect.h"
 #include "SDL3/SDL_render.h"
 
+#include "SDL3/SDL_surface.h"
 #include "gameboy.h"
 #include "renderer.h"
 
 Renderer::Renderer(Gameboy &gameboy) : gameboy(gameboy) {
 
-  pallette = {0xFFE0F8D0, 0xFF88C070, 0xFF346856, 0xFF081820};
+  pallette = {0xE2F3E4FF, 0x94E344FF, 0x46878FFF, 0x332C50FF};
 
   if (!SDL_CreateWindowAndRenderer("Game Boy Emulator", 160 * 4, 144 * 4, 0,
                                    &window, &renderer)) {
@@ -21,6 +22,7 @@ Renderer::Renderer(Gameboy &gameboy) : gameboy(gameboy) {
 
   screen_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
                                      SDL_TEXTUREACCESS_STREAMING, 160, 144);
+  SDL_SetTextureScaleMode(screen_texture, SDL_SCALEMODE_NEAREST);
 }
 
 Renderer::~Renderer() {
