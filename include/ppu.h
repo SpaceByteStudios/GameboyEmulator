@@ -20,7 +20,14 @@ private:
   Memory &memory;
 
   std::vector<uint8_t> vram;
+  std::vector<uint8_t> oam;
   std::vector<uint8_t> screen;
+
+  // Mode 0 HBlank
+  // Mode 1 VBlank
+  // Mode 2 OAM Scan
+  // Mode 3 Drawing
+  uint8_t ppu_mode;
 
   uint8_t LCDC;
   uint8_t STAT;

@@ -1,10 +1,29 @@
 #include "ppu.h"
 
-PPU::PPU(Memory &memory) : memory(memory), vram(0x2000), screen(160 * 144) {}
+PPU::PPU(Memory &memory)
+    : memory(memory), vram(0x2000), oam(0x9F), screen(0x5A00) {}
 
 void PPU::tick(uint8_t cycles) {}
 
 uint8_t PPU::read(uint16_t address) const {
+  // VRAM
+  if ((0x8000 <= address) && (address < 0xA000)) {
+    if (ppu_mode == 3) {
+      return 0xFF;
+    }
+
+    return vram[address - 0x8000];
+  }
+
+  // OAM
+  if ((0xFE00 <= address) && (address < 0xFEA0)) {
+    if (ppu_mode == 2 || ppu_mode == 3) {
+      return 0xFF;
+    }
+
+    return oam[address - 0xFE00];
+  }
+
   // PPU I/O
   if (address >= 0xFF40 && address <= 0xFF4B) {
     switch (address) {
@@ -41,6 +60,24 @@ uint8_t PPU::read(uint16_t address) const {
 }
 
 void PPU::write(uint16_t address, uint8_t value) {
+  // VRAM
+  if ((0x8000 <= address) && (address < 0xA000)) {
+    if (ppu_mode == 3) {
+      return;
+    }
+
+    vram[address - 0x8000] = value;
+  }
+
+  // OAM
+  if ((0xFE00 <= address) && (address < 0xFEA0)) {
+    if (ppu_mode == 2 || ppu_mode == 3) {
+      return;
+    }
+
+    oam[address - 0xFE00] = value;
+  }
+
   // PPU I/O
   if (address >= 0xFF40 && address <= 0xFF4B) {
     switch (address) {

@@ -23,7 +23,7 @@ void Gameboy::step() {
   ppu->tick(cycles);
 }
 
-std::vector<uint8_t> Gameboy::get_screen() { return ppu->get_screen(); }
+std::vector<uint8_t> Gameboy::getScreen() { return ppu->get_screen(); }
 
 void Gameboy::hexDump(const std::string &filename) const {
   memory.hexDump(filename);

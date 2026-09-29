@@ -12,7 +12,7 @@ public:
 
   void step();
 
-  std::vector<uint8_t> get_screen();
+  std::vector<uint8_t> getScreen();
 
   void hexDump(const std::string &filename) const;
 

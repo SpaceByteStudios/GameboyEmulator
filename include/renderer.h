@@ -1,7 +1,10 @@
 #pragma once
 
-#include "gameboy.h"
 #include <SDL3/SDL.h>
+#include <cstdint>
+#include <vector>
+
+#include "gameboy.h"
 
 class Renderer {
 public:
@@ -13,6 +16,9 @@ public:
 private:
   SDL_Window *window = nullptr;
   SDL_Renderer *renderer = nullptr;
+  SDL_Texture *screen_texture = nullptr;
 
   Gameboy &gameboy;
+
+  std::vector<uint32_t> pallette;
 };

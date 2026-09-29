@@ -31,7 +31,7 @@ int main() {
       }
     }
 
-    gameboy.run();
+    gameboy.step();
 
     renderer.draw();
 
