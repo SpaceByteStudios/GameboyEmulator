@@ -11,6 +11,9 @@ public:
   Gameboy(const std::string &path);
 
   void step();
+  void runFrame();
+
+  void test_screen();
 
   std::vector<uint8_t> getScreen();
 

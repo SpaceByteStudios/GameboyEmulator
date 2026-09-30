@@ -31,7 +31,7 @@ uint8_t Memory::read(uint16_t address) const {
 
   // Echo RAM
   if ((0xE000 <= address) && (address < 0xFE00)) {
-    return memory[address - 0x1000];
+    return memory[address - 0x2000];
   }
 
   // OAM
@@ -61,12 +61,7 @@ uint8_t Memory::read(uint16_t address) const {
 
   // IE
   if (address == 0xFFFF) {
-    return memory[address] | 0xE0;
-  }
-
-  // hardcoded VBlank
-  if (address == 0xFF44) {
-    return 0x90;
+    return memory[address];
   }
 
   return memory[address];
@@ -99,7 +94,7 @@ void Memory::write(uint16_t address, uint8_t value) {
 
   // Echo RAM
   if ((0xE000 <= address) && (address < 0xFE00)) {
-    memory[address - 0x1000] = value;
+    memory[address - 0x2000] = value;
     return;
   }
 
@@ -134,7 +129,7 @@ void Memory::write(uint16_t address, uint8_t value) {
 
   // IE
   if (address == 0xFFFF) {
-    memory[address] = value & 0x1F;
+    memory[address] = value;
     return;
   }
 
@@ -173,31 +168,32 @@ void Memory::hexDump(const std::string &filename) const {
     return;
   }
 
-  for (uint32_t address = 0; address < memory.size(); address += 16) {
+  constexpr uint32_t address_space_size = 0x10000;
+
+  for (uint32_t address = 0; address < address_space_size; address += 16) {
+
     // Address
     file << std::uppercase << std::hex << std::setw(4) << std::setfill('0')
          << address << "  ";
 
     // Hex bytes
     for (uint32_t i = 0; i < 16; ++i) {
-      if (address + i < memory.size()) {
-        file << std::setw(2) << static_cast<int>(memory[address + i]) << ' ';
-      }
+      uint8_t value = read(static_cast<uint16_t>(address + i));
+
+      file << std::setw(2) << static_cast<int>(value) << ' ';
     }
 
     // ASCII representation
     file << " |";
 
     for (uint32_t i = 0; i < 16; ++i) {
-      if (address + i >= memory.size())
-        break;
+      uint8_t value = read(static_cast<uint16_t>(address + i));
 
-      uint8_t value = memory[address + i];
-
-      if (value >= 0x20 && value <= 0x7E)
+      if (value >= 0x20 && value <= 0x7E) {
         file << static_cast<char>(value);
-      else
+      } else {
         file << '.';
+      }
     }
 
     file << "|\n";
