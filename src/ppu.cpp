@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <vector>
 
 #include "memory.h"
@@ -183,5 +184,23 @@ void PPU::updateMode() {
 }
 
 void PPU::oamSearch() {
-  // Do OAM Search
+  oam_search.clear();
+  bool size_is_big = LCDC & 0x4;
+
+  for (int i = 0; i < 40; i++) {
+    if (oam_search.size() > 10) {
+      break;
+    }
+
+    uint16_t address = 0xFE00 + 0x4 * i;
+    uint8_t obj_y = read(address);
+
+    if (LY <= obj_y) {
+      if (!size_is_big && obj_y < LY + 8) {
+        oam_search.push_back(address);
+      } else if (size_is_big && obj_y < LY + 16) {
+        oam_search.push_back(address);
+      }
+    }
+  }
 }
