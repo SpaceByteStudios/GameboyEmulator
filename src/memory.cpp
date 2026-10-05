@@ -6,7 +6,7 @@
 #include <iostream>
 #include <memory.h>
 
-Memory::Memory(const std::string &path) : memory(0x10000), cartridge(path) {}
+Memory::Memory(const std::string &path) : wram(0x2000), cartridge(path) {}
 
 uint8_t Memory::read(uint16_t address) const {
   // ROM
@@ -26,12 +26,12 @@ uint8_t Memory::read(uint16_t address) const {
 
   // WRAM
   if ((0xC000 <= address) && (address < 0xE000)) {
-    return memory[address];
+    return wram[address - 0xC000];
   }
 
   // Echo RAM
   if ((0xE000 <= address) && (address < 0xFE00)) {
-    return memory[address - 0x2000];
+    return wram[address - 0xE000];
   }
 
   // OAM
@@ -56,15 +56,15 @@ uint8_t Memory::read(uint16_t address) const {
 
   // IF
   if (address == 0xFF0F) {
-    return memory[address] | 0xE0;
+    return IF | 0xE0;
   }
 
   // IE
   if (address == 0xFFFF) {
-    return memory[address];
+    return IE;
   }
 
-  return memory[address];
+  return 0xFF;
 }
 
 void Memory::write(uint16_t address, uint8_t value) {
@@ -88,13 +88,13 @@ void Memory::write(uint16_t address, uint8_t value) {
 
   // WRAM
   if ((0xC000 <= address) && (address < 0xE000)) {
-    memory[address] = value;
+    wram[address - 0xC000] = value;
     return;
   }
 
   // Echo RAM
   if ((0xE000 <= address) && (address < 0xFE00)) {
-    memory[address - 0x2000] = value;
+    wram[address - 0xE000] = value;
     return;
   }
 
@@ -123,24 +123,14 @@ void Memory::write(uint16_t address, uint8_t value) {
 
   // IF
   if (address == 0xFF0F) {
-    memory[address] = value & 0x1F;
+    IF = value & 0x1F;
     return;
   }
 
   // IE
   if (address == 0xFFFF) {
-    memory[address] = value;
+    IE = value;
     return;
-  }
-
-  memory[address] = value;
-
-  // hardcoded Serial to console
-  if (address == 0xFF02 && value == 0x81) {
-    // return;
-
-    std::cout << static_cast<char>(memory[0xFF01]);
-    std::cout.flush();
   }
 }
 

@@ -24,10 +24,13 @@ public:
   void hexDump(const std::string &filename) const;
 
 private:
-  std::vector<uint8_t> memory;
+  std::vector<uint8_t> wram;
 
   Cartridge cartridge;
 
   Timer *timer = nullptr;
   PPU *ppu = nullptr;
+
+  uint8_t IF;
+  uint8_t IE;
 };
