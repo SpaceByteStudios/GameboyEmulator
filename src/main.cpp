@@ -10,7 +10,7 @@
 constexpr double target_frame_time = 1.0 / 60.0;
 
 int main() {
-  Gameboy gameboy = Gameboy("./roms/test_roms/scrolling.gb");
+  Gameboy gameboy = Gameboy("./roms/test_roms/window.gb");
   Renderer renderer = Renderer(gameboy);
 
   // gameboy.test_screen();

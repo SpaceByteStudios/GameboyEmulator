@@ -24,10 +24,10 @@ void PPU::tick(uint8_t cycles) {
 
     if (ppu_mode == 3) {
       // Mode 3 starts at dot 80.
-      uint16_t x = dots_amount - 80;
+      current_x = dots_amount - 80;
 
-      if (x < 160 && LY < 144) {
-        drawBackgroundPixel(static_cast<uint8_t>(x), LY);
+      if (current_x < 160 && LY < 144) {
+        drawPixel();
       }
     }
 
@@ -39,6 +39,11 @@ void PPU::tick(uint8_t cycles) {
       // TODO
       // Add LYC STAT Interrupt
       LY += 1;
+
+      if (window_drawn) {
+        window_line += 1;
+        window_drawn = false;
+      }
 
       if (LY == 144) {
         uint8_t IF = memory.read(0xFF0F);
@@ -283,6 +288,8 @@ void PPU::drawWindowPixel(uint8_t x, uint8_t y) {
   if (x >= 160 || y >= 144) {
     return;
   }
+
+  window_drawn = true;
 
   const uint16_t window_x = static_cast<uint16_t>(x) - (WX - 7);
 

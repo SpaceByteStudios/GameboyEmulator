@@ -59,6 +59,7 @@ private:
   uint8_t WX = 0;
 
   uint8_t window_line = 0;
+  bool window_drawn = false;
 
   void updateMode();
   void oamSearch();
