@@ -8,7 +8,7 @@
 #include <memory>
 
 uint8_t tiles[][16] = {
-    // Tile 0: empty
+    // Tile 0: Color 0
     {
         0x00,
         0x00,
@@ -28,64 +28,64 @@ uint8_t tiles[][16] = {
         0x00,
     },
 
-    // Tile 1: vertical stripes
+    // Tile 1: Color 1
     {
-        0xCC,
+        0xFF,
         0x00,
-        0xCC,
+        0xFF,
         0x00,
-        0xCC,
+        0xFF,
         0x00,
-        0xCC,
+        0xFF,
         0x00,
-        0xCC,
+        0xFF,
         0x00,
-        0xCC,
+        0xFF,
         0x00,
-        0xCC,
+        0xFF,
         0x00,
-        0xCC,
+        0xFF,
         0x00,
     },
 
-    // Tile 2: horizontal stripes
+    // Tile 2: Color 2
     {
         0x00,
         0xFF,
         0x00,
-        0x00,
+        0xFF,
         0x00,
         0xFF,
         0x00,
-        0x00,
+        0xFF,
         0x00,
         0xFF,
         0x00,
-        0x00,
+        0xFF,
         0x00,
         0xFF,
         0x00,
-        0x00,
+        0xFF,
     },
 
-    // Tile 3: checkerboard
+    // Tile 3: Color 3
     {
-        0xAA,
-        0x55,
-        0x55,
-        0xAA,
-        0xAA,
-        0x55,
-        0x55,
-        0xAA,
-        0xAA,
-        0x55,
-        0x55,
-        0xAA,
-        0xAA,
-        0x55,
-        0x55,
-        0xAA,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
+        0xFF,
     }};
 
 Gameboy::Gameboy(const std::string &path)
@@ -120,8 +120,8 @@ void Gameboy::test_screen() {
   memory.write(0xFF40, 0x91);
 
   // No scrolling
-  memory.write(0xFF42, 0);
-  memory.write(0xFF43, 0);
+  memory.write(0xFF42, 0x0);
+  memory.write(0xFF43, 0x0);
 
   // Normal palette
   memory.write(0xFF47, 0xE4);
@@ -139,6 +139,15 @@ void Gameboy::test_screen() {
       uint8_t tile_id = (x + y) & 3;
 
       memory.write(0x9800 + y * 32 + x, tile_id);
+    }
+  }
+
+  // Write tile map 2.
+  for (int y = 0; y < 32; y++) {
+    for (int x = 0; x < 32; x++) {
+      uint8_t tile_id = x % 4;
+
+      memory.write(0x9C00 + y * 32 + x, tile_id);
     }
   }
 }

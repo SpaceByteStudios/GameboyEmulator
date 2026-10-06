@@ -9,6 +9,12 @@ PPU::PPU(Memory &memory)
       oam_search() {}
 
 void PPU::tick(uint8_t cycles) {
+  bool lcd_on = LCDC & 0x80;
+
+  if (!lcd_on) {
+    return;
+  }
+
   for (uint8_t i = 0; i < cycles * 4; ++i) {
     updateMode();
 
@@ -45,9 +51,11 @@ void PPU::tick(uint8_t cycles) {
 }
 
 uint8_t PPU::read(uint16_t address) const {
+  bool lcd_on = LCDC & 0x80;
+
   // VRAM
   if ((0x8000 <= address) && (address < 0xA000)) {
-    if (ppu_mode == 3) {
+    if (ppu_mode == 3 && lcd_on) {
       return 0xFF;
     }
 
@@ -56,7 +64,7 @@ uint8_t PPU::read(uint16_t address) const {
 
   // OAM
   if ((0xFE00 <= address) && (address < 0xFEA0)) {
-    if (ppu_mode == 2 || ppu_mode == 3) {
+    if ((ppu_mode == 2 || ppu_mode == 3) && lcd_on) {
       return 0xFF;
     }
 
@@ -99,9 +107,11 @@ uint8_t PPU::read(uint16_t address) const {
 }
 
 void PPU::write(uint16_t address, uint8_t value) {
+  bool lcd_on = LCDC & 0x80;
+
   // VRAM
   if ((0x8000 <= address) && (address < 0xA000)) {
-    if (ppu_mode == 3) {
+    if (ppu_mode == 3 && lcd_on) {
       return;
     }
 
@@ -110,7 +120,7 @@ void PPU::write(uint16_t address, uint8_t value) {
 
   // OAM
   if ((0xFE00 <= address) && (address < 0xFEA0)) {
-    if (ppu_mode == 2 || ppu_mode == 3) {
+    if ((ppu_mode == 2 || ppu_mode == 3) && lcd_on) {
       return;
     }
 
@@ -232,7 +242,6 @@ void PPU::drawBackgroundPixel(uint8_t x, uint8_t y) {
 
   // Position in the 256x256 background.
   const uint16_t bg_x = (static_cast<uint16_t>(x) + SCX) & 0xFF;
-
   const uint16_t bg_y = (static_cast<uint16_t>(y) + SCY) & 0xFF;
 
   // Tile coordinate.
@@ -240,25 +249,12 @@ void PPU::drawBackgroundPixel(uint8_t x, uint8_t y) {
   const uint8_t tile_y = bg_y >> 3;
 
   // Pixel coordinate within tile.
-  const uint8_t pixel_x = bg_x & 7;
-  const uint8_t pixel_y = bg_y & 7;
-
-  // --------------------------------------------------------
-  // BG tile map
-  //
-  // $9800 -> vram[0x1800]
-  // $9C00 -> vram[0x1C00]
-  // --------------------------------------------------------
+  const uint8_t pixel_x = bg_x & 0x7;
+  const uint8_t pixel_y = bg_y & 0x7;
 
   const uint16_t tile_map = (LCDC & 0x08) ? 0x1C00 : 0x1800;
-
   const uint16_t tile_map_offset = tile_map + tile_y * 32 + tile_x;
-
   const uint8_t tile_number = vram[tile_map_offset];
-
-  // --------------------------------------------------------
-  // Tile data
-  // --------------------------------------------------------
 
   uint16_t tile_offset;
 
@@ -285,7 +281,7 @@ void PPU::drawBackgroundPixel(uint8_t x, uint8_t y) {
   const uint8_t color = ((low >> bit) & 1) | (((high >> bit) & 1) << 1);
 
   // Apply BGP.
-  const uint8_t shade = (BGP >> (color * 2)) & 3;
+  const uint8_t shade = (BGP >> (color * 2)) & 0x3;
 
   screen[y * 160 + x] = shade;
 }
