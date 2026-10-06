@@ -25,6 +25,7 @@ public:
 
 private:
   std::vector<uint8_t> wram;
+  std::vector<uint8_t> hram;
 
   Cartridge cartridge;
 

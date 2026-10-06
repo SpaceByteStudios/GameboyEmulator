@@ -108,10 +108,7 @@ void Gameboy::runFrame() {
   const uint64_t start_frame = ppu->getFrameCount();
 
   while (ppu->getFrameCount() == start_frame) {
-    uint8_t cycles = cpu.step();
-
-    timer->tick(cycles);
-    ppu->tick(cycles);
+    step();
   }
 }
 

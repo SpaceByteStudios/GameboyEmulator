@@ -29,7 +29,7 @@ private:
   uint16_t reg_pc;
 
   bool IME;
-  bool next_IME;
+  uint8_t ime_delay = 0;
 
   bool halted;
   bool stopped;
@@ -59,5 +59,5 @@ private:
 
   bool condition(uint8_t cond) const;
 
-  void service_pending(uint8_t pending);
+  uint8_t service_pending(uint8_t pending);
 };

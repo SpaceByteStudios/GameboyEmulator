@@ -15,7 +15,6 @@ CPU::CPU(Memory &memory) : memory(memory) {
   reg_pc = 0x0100;
 
   IME = false;
-  next_IME = false;
 
   halted = false;
   stopped = false;
@@ -37,8 +36,7 @@ uint8_t CPU::step() {
   }
 
   if (IME && pending) {
-    service_pending(pending);
-    return 5;
+    return service_pending(pending);
   }
 
   uint8_t opcode = fetch();
@@ -46,10 +44,15 @@ uint8_t CPU::step() {
 
   if (opcode == 0xF3) {
     IME = false;
-    next_IME = false;
-  } else if (next_IME) {
-    IME = true;
-    next_IME = false;
+    ime_delay = 0;
+  }
+
+  if (ime_delay > 0) {
+    --ime_delay;
+
+    if (ime_delay == 0) {
+      IME = true;
+    }
   }
 
   return cycles;
@@ -1020,14 +1023,13 @@ uint8_t CPU::execute(uint8_t opcode) {
 
     // ei
     if (opcode == 0xFB) {
-      next_IME = true;
-
+      ime_delay = 2;
       return 1;
     }
 
     // di
     if (opcode == 0xF3) {
-      next_IME = false;
+      ime_delay = 0;
       IME = false;
 
       return 1;
@@ -1202,7 +1204,7 @@ bool CPU::condition(uint8_t cond) const {
   }
 }
 
-void CPU::service_pending(uint8_t pending) {
+uint8_t CPU::service_pending(uint8_t pending) {
   for (int i = 0; i < 5; i++) {
     uint8_t bit_value = (pending >> i) & 0x01;
 
@@ -1239,11 +1241,15 @@ void CPU::service_pending(uint8_t pending) {
       break;
     }
 
+    uint16_t return_pc = reg_pc;
+
     reg_sp -= 2;
-    memory.write16(reg_sp, reg_pc);
+    memory.write16(reg_sp, return_pc);
 
     reg_pc = address;
 
-    break;
+    return 5;
   }
+
+  return 0;
 }

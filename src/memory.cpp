@@ -6,7 +6,8 @@
 #include <iostream>
 #include <memory.h>
 
-Memory::Memory(const std::string &path) : wram(0x2000), cartridge(path) {}
+Memory::Memory(const std::string &path)
+    : wram(0x2000), hram(0x7E), cartridge(path) {}
 
 uint8_t Memory::read(uint16_t address) const {
   // ROM
@@ -52,6 +53,11 @@ uint8_t Memory::read(uint16_t address) const {
   // PPU I/O
   if (address >= 0xFF40 && address <= 0xFF4B) {
     return ppu->read(address);
+  }
+
+  // HRAM
+  if ((0xFF80 <= address) && (address < 0xFFFF)) {
+    return hram[address - 0xFF80];
   }
 
   // IF
@@ -118,6 +124,12 @@ void Memory::write(uint16_t address, uint8_t value) {
   // PPU I/O
   if (address >= 0xFF40 && address <= 0xFF4B) {
     ppu->write(address, value);
+    return;
+  }
+
+  // HRAM
+  if ((0xFF80 <= address) && (address < 0xFFFF)) {
+    hram[address - 0xFF80] = value;
     return;
   }
 
