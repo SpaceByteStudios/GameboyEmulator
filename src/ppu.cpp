@@ -10,7 +10,6 @@ PPU::PPU(Memory &memory)
 
 void PPU::tick(uint8_t cycles) {
   for (uint8_t i = 0; i < cycles * 4; ++i) {
-
     updateMode();
 
     if (ppu_mode == 2 && dots_amount == 0) {
@@ -26,17 +25,17 @@ void PPU::tick(uint8_t cycles) {
       }
     }
 
-    ++dots_amount;
+    dots_amount += 1;
 
-    if (dots_amount == 456) {
+    if (dots_amount >= 456) {
       dots_amount = 0;
 
-      ++LY;
+      LY += 1;
 
-      if (LY == 154) {
+      if (LY >= 154) {
         LY = 0;
         window_line = 0;
-        frame_count++;
+        frame_count += 1;
       }
 
       window_was_drawn = false;
@@ -44,23 +43,24 @@ void PPU::tick(uint8_t cycles) {
     }
   }
 }
+
 uint8_t PPU::read(uint16_t address) const {
   // VRAM
   if ((0x8000 <= address) && (address < 0xA000)) {
-    return vram[address - 0x8000];
-
     if (ppu_mode == 3) {
       return 0xFF;
     }
+
+    return vram[address - 0x8000];
   }
 
   // OAM
   if ((0xFE00 <= address) && (address < 0xFEA0)) {
-    return oam[address - 0xFE00];
-
     if (ppu_mode == 2 || ppu_mode == 3) {
       return 0xFF;
     }
+
+    return oam[address - 0xFE00];
   }
 
   // PPU I/O
