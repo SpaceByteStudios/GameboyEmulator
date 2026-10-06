@@ -36,7 +36,14 @@ void PPU::tick(uint8_t cycles) {
     if (dots_amount >= 456) {
       dots_amount = 0;
 
+      // TODO
+      // Add LYC STAT Interrupt
       LY += 1;
+
+      if (LY == 144) {
+        uint8_t IF = memory.read(0xFF0F);
+        memory.write(0xFF0F, IF | 0x01);
+      }
 
       if (LY >= 154) {
         LY = 0;
@@ -44,7 +51,6 @@ void PPU::tick(uint8_t cycles) {
         frame_count += 1;
       }
 
-      window_was_drawn = false;
       mode3_penalty = 0;
     }
   }
@@ -173,16 +179,8 @@ std::vector<uint8_t> PPU::get_screen() { return screen; }
 
 void PPU::updateMode() {
   if (LY >= 144) {
-    if (ppu_mode != 1) {
-      uint8_t IF = memory.read(0xFF0F);
-      memory.write(0xFF0F, IF | 0x01);
-    }
-
     ppu_mode = 1;
-    return;
-  }
-
-  if (dots_amount < 80) {
+  } else if (dots_amount < 80) {
     ppu_mode = 2;
   } else if (dots_amount < 252) {
     ppu_mode = 3;
@@ -211,19 +209,14 @@ void PPU::oamSearch() {
 }
 
 void PPU::drawPixel() {
-  drawBackgroundPixel(current_x, LY);
-  return;
-
   const uint8_t x = current_x;
   const uint8_t y = LY;
 
   bool window_enabled = LCDC & 0x20;
-
   bool drawing_window = window_enabled && y >= WY && x + 7 >= WX;
 
   if (drawing_window) {
     drawWindowPixel(x, y);
-    window_was_drawn = true;
   } else {
     drawBackgroundPixel(x, y);
   }
