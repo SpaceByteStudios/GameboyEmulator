@@ -65,6 +65,6 @@ private:
   void oamSearch();
 
   void drawPixel();
-  void drawBackgroundPixel(uint8_t x, uint8_t y);
-  void drawWindowPixel(uint8_t x, uint8_t y);
+  uint8_t drawBackgroundPixel(uint8_t x, uint8_t y);
+  uint8_t drawWindowPixel(uint8_t x, uint8_t y);
 };

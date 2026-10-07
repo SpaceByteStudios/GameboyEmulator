@@ -9,7 +9,7 @@ PPU::PPU(Memory &memory)
       oam_search() {}
 
 void PPU::tick(uint8_t cycles) {
-  bool lcd_on = LCDC & 0x80;
+  const bool lcd_on = LCDC & 0x80;
 
   if (!lcd_on) {
     return;
@@ -62,7 +62,7 @@ void PPU::tick(uint8_t cycles) {
 }
 
 uint8_t PPU::read(uint16_t address) const {
-  bool lcd_on = LCDC & 0x80;
+  const bool lcd_on = LCDC & 0x80;
 
   // VRAM
   if ((0x8000 <= address) && (address < 0xA000)) {
@@ -118,7 +118,7 @@ uint8_t PPU::read(uint16_t address) const {
 }
 
 void PPU::write(uint16_t address, uint8_t value) {
-  bool lcd_on = LCDC & 0x80;
+  const bool lcd_on = LCDC & 0x80;
 
   // VRAM
   if ((0x8000 <= address) && (address < 0xA000)) {
@@ -217,25 +217,28 @@ void PPU::drawPixel() {
   const uint8_t x = current_x;
   const uint8_t y = LY;
 
-  bool window_enabled = LCDC & 0x20;
-  bool drawing_window = window_enabled && y >= WY && x + 7 >= WX;
-
-  if (drawing_window) {
-    drawWindowPixel(x, y);
-  } else {
-    drawBackgroundPixel(x, y);
-  }
-}
-
-void PPU::drawBackgroundPixel(uint8_t x, uint8_t y) {
   if (x >= 160 || y >= 144) {
     return;
   }
 
+  bool window_enabled = LCDC & 0x20;
+  bool drawing_window = window_enabled && y >= WY && x + 7 >= WX;
+
+  uint8_t color = 0;
+
+  if (drawing_window) {
+    color = drawWindowPixel(x, y);
+  } else {
+    color = drawBackgroundPixel(x, y);
+  }
+
+  screen[y * 160 + x] = color;
+}
+
+uint8_t PPU::drawBackgroundPixel(uint8_t x, uint8_t y) {
   // BG disabled.
   if (!(LCDC & 0x01)) {
-    screen[y * 160 + x] = 0;
-    return;
+    return 0;
   }
 
   // Position in the 256x256 background.
@@ -262,37 +265,26 @@ void PPU::drawBackgroundPixel(uint8_t x, uint8_t y) {
   } else {
     // $8800 addressing mode.
     const int8_t signed_tile = static_cast<int8_t>(tile_number);
-
     tile_offset = static_cast<uint16_t>(0x1000 + signed_tile * 16);
   }
 
   // Two bytes per tile row.
   const uint16_t row_offset = tile_offset + pixel_y * 2;
-
   const uint8_t low = vram[row_offset];
-
   const uint8_t high = vram[row_offset + 1];
 
   // Leftmost pixel is bit 7.
   const uint8_t bit = 7 - pixel_x;
-
   const uint8_t color = ((low >> bit) & 1) | (((high >> bit) & 1) << 1);
-
-  // Apply BGP.
   const uint8_t shade = (BGP >> (color * 2)) & 0x3;
 
-  screen[y * 160 + x] = shade;
+  return shade;
 }
 
-void PPU::drawWindowPixel(uint8_t x, uint8_t y) {
-  if (x >= 160 || y >= 144) {
-    return;
-  }
-
+uint8_t PPU::drawWindowPixel(uint8_t x, uint8_t y) {
   window_drawn = true;
 
   const uint16_t window_x = static_cast<uint16_t>(x) - (WX - 7);
-
   const uint16_t window_y = window_line;
 
   const uint8_t tile_x = window_x >> 3;
@@ -302,9 +294,7 @@ void PPU::drawWindowPixel(uint8_t x, uint8_t y) {
   const uint8_t pixel_y = window_y & 7;
 
   const uint16_t tile_map = (LCDC & 0x40) ? 0x1C00 : 0x1800;
-
   const uint16_t tile_map_address = tile_map + tile_y * 32 + tile_x;
-
   const uint8_t tile_number = vram[tile_map_address];
 
   uint16_t tile_address;
@@ -313,23 +303,18 @@ void PPU::drawWindowPixel(uint8_t x, uint8_t y) {
     tile_address = static_cast<uint16_t>(tile_number) * 16;
   } else {
     const int8_t signed_tile = static_cast<int8_t>(tile_number);
-
     tile_address = static_cast<uint16_t>(0x1000 + signed_tile * 16);
   }
 
   const uint16_t row_address = tile_address + pixel_y * 2;
-
   const uint8_t low = vram[row_address];
-
   const uint8_t high = vram[row_address + 1];
 
   const uint8_t bit = 7 - pixel_x;
-
   const uint8_t color = ((low >> bit) & 1) | (((high >> bit) & 1) << 1);
-
   const uint8_t shade = (BGP >> (color * 2)) & 3;
 
-  screen[y * 160 + x] = shade;
+  return shade;
 }
 
 uint64_t PPU::getFrameCount() const { return frame_count; }
