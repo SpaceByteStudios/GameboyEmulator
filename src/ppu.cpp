@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdint>
+#include <iostream>
 #include <vector>
 
 #include "memory.h"
@@ -7,7 +8,9 @@
 
 PPU::PPU(Memory &memory)
     : memory(memory), vram(0x2000, 0), oam(0xA0, 0), screen(160 * 144, 0),
-      oam_search() {}
+      oam_search() {
+  oam_dma_transfer_timer = 0;
+}
 
 void PPU::tick(uint8_t cycles) {
   const bool lcd_on = LCDC & 0x80;
@@ -17,6 +20,15 @@ void PPU::tick(uint8_t cycles) {
   }
 
   for (uint8_t i = 0; i < cycles * 4; ++i) {
+    if (memory.oam_dma_running) {
+      oam_dma_transfer_timer -= 1;
+
+      if (oam_dma_transfer_timer <= 0) {
+        oam_dma_transfer_timer = 0;
+        memory.oam_dma_running = false;
+      }
+    }
+
     updateMode();
 
     if (ppu_mode == 2 && dots_amount == 0) {
@@ -56,8 +68,6 @@ void PPU::tick(uint8_t cycles) {
         window_line = 0;
         frame_count += 1;
       }
-
-      mode3_penalty = 0;
     }
   }
 }
@@ -161,6 +171,7 @@ void PPU::write(uint16_t address, uint8_t value) {
       break;
     case 0xFF46:
       DMA = value;
+      runOamDmaTransfer();
       break;
     case 0xFF47:
       BGP = value;
@@ -213,6 +224,17 @@ void PPU::oamSearch() {
       oam_search.push_back(address);
     }
   }
+}
+
+void PPU::runOamDmaTransfer() {
+  uint16_t source = std::min<uint16_t>(DMA, 0xDF) << 8;
+
+  for (int i = 0; i < 160; i++) {
+    oam[i] = memory.read(source + i);
+  }
+
+  memory.oam_dma_running = true;
+  oam_dma_transfer_timer = 160;
 }
 
 void PPU::drawPixel() {

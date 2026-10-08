@@ -21,7 +21,9 @@ public:
   void setTimer(Timer *timer);
   void setPPU(PPU *ppu);
 
-  void hexDump(const std::string &filename) const;
+  void hexDump(const std::string &filename);
+
+  bool oam_dma_running;
 
 private:
   std::vector<uint8_t> wram;

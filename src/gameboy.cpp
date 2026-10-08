@@ -167,9 +167,15 @@ void Gameboy::step() {
 
 void Gameboy::runFrame() {
   const uint64_t start_frame = ppu->getFrameCount();
+  int steps = 0;
 
   while (ppu->getFrameCount() == start_frame) {
+    if (steps >= 100000) {
+      break;
+    }
+
     step();
+    steps += 1;
   }
 }
 
@@ -224,6 +230,4 @@ void Gameboy::test_screen() {
 
 std::vector<uint8_t> Gameboy::getScreen() { return ppu->get_screen(); }
 
-void Gameboy::hexDump(const std::string &filename) const {
-  memory.hexDump(filename);
-}
+void Gameboy::hexDump(const std::string &filename) { memory.hexDump(filename); }

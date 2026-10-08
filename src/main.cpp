@@ -10,10 +10,10 @@
 constexpr double target_frame_time = 1.0 / 60.0;
 
 int main() {
-  Gameboy gameboy = Gameboy("./roms/test_roms/nothing.gb");
+  Gameboy gameboy = Gameboy("./roms/test_roms/oam_dma_transfer.gb");
   Renderer renderer = Renderer(gameboy);
 
-  gameboy.test_screen();
+  // gameboy.test_screen();
 
   if (!SDL_Init(SDL_INIT_VIDEO)) {
     std::cerr << "SDL_Init failed: " << SDL_GetError() << '\n';

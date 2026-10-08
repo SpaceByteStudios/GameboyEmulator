@@ -7,9 +7,20 @@
 #include <memory.h>
 
 Memory::Memory(const std::string &path)
-    : wram(0x2000), hram(0x7E), cartridge(path) {}
+    : wram(0x2000), hram(0x7E), cartridge(path) {
+  oam_dma_running = false;
+}
 
 uint8_t Memory::read(uint16_t address) const {
+  // HRAM
+  if ((0xFF80 <= address) && (address < 0xFFFF)) {
+    return hram[address - 0xFF80];
+  }
+
+  if (oam_dma_running) {
+    return 0xFF;
+  }
+
   // ROM
   if (address < 0x8000) {
     return cartridge.read(address);
@@ -55,11 +66,6 @@ uint8_t Memory::read(uint16_t address) const {
     return ppu->read(address);
   }
 
-  // HRAM
-  if ((0xFF80 <= address) && (address < 0xFFFF)) {
-    return hram[address - 0xFF80];
-  }
-
   // IF
   if (address == 0xFF0F) {
     return IF | 0xE0;
@@ -74,6 +80,16 @@ uint8_t Memory::read(uint16_t address) const {
 }
 
 void Memory::write(uint16_t address, uint8_t value) {
+  // HRAM
+  if ((0xFF80 <= address) && (address < 0xFFFF)) {
+    hram[address - 0xFF80] = value;
+    return;
+  }
+
+  if (oam_dma_running) {
+    return;
+  }
+
   // ROM
   if (address < 0x8000) {
     cartridge.write(address, value);
@@ -127,12 +143,6 @@ void Memory::write(uint16_t address, uint8_t value) {
     return;
   }
 
-  // HRAM
-  if ((0xFF80 <= address) && (address < 0xFFFF)) {
-    hram[address - 0xFF80] = value;
-    return;
-  }
-
   // IF
   if (address == 0xFF0F) {
     IF = value & 0x1F;
@@ -162,7 +172,7 @@ void Memory::setTimer(Timer *timer) { this->timer = timer; }
 
 void Memory::setPPU(PPU *ppu) { this->ppu = ppu; }
 
-void Memory::hexDump(const std::string &filename) const {
+void Memory::hexDump(const std::string &filename) {
   std::ofstream file(filename);
 
   if (!file) {
@@ -174,6 +184,9 @@ void Memory::hexDump(const std::string &filename) const {
 
   uint8_t lcdc = ppu->read(0xFF40);
   ppu->write(0xFF40, 0x00);
+
+  bool transfer_running = oam_dma_running;
+  oam_dma_running = false;
 
   for (uint32_t address = 0; address < address_space_size; address += 16) {
 
@@ -205,4 +218,5 @@ void Memory::hexDump(const std::string &filename) const {
   }
 
   ppu->write(0xFF40, lcdc);
+  oam_dma_running = transfer_running;
 }

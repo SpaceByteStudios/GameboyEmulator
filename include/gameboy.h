@@ -17,7 +17,7 @@ public:
 
   std::vector<uint8_t> getScreen();
 
-  void hexDump(const std::string &filename) const;
+  void hexDump(const std::string &filename);
 
 private:
   Memory memory;

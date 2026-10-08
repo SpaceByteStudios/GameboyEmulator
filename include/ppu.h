@@ -37,8 +37,9 @@ private:
   // Drawing Variables
   uint8_t current_x = 0;
   uint16_t dots_amount = 0;
-  uint8_t mode3_penalty = 0;
+
   std::vector<uint8_t> oam_search;
+  uint8_t oam_dma_transfer_timer;
 
   uint8_t LCDC = 0;
   uint8_t STAT = 0;
@@ -63,6 +64,7 @@ private:
 
   void updateMode();
   void oamSearch();
+  void runOamDmaTransfer();
 
   void drawPixel();
   uint8_t getBackgroundPixel(uint8_t x, uint8_t y);
