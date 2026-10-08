@@ -224,18 +224,23 @@ void PPU::drawPixel() {
   bool window_enabled = LCDC & 0x20;
   bool drawing_window = window_enabled && y >= WY && x + 7 >= WX;
 
-  uint8_t color = 0;
+  uint8_t screen_color = 0;
 
   if (drawing_window) {
-    color = drawWindowPixel(x, y);
+    screen_color = getWindowPixel(x, y);
   } else {
-    color = drawBackgroundPixel(x, y);
+    screen_color = getBackgroundPixel(x, y);
   }
 
-  screen[y * 160 + x] = color;
+  bool sprites_enabled = LCDC & 0x02;
+  if (sprites_enabled) {
+    screen_color = getSpritePixel(x, y, screen_color);
+  }
+
+  screen[y * 160 + x] = screen_color;
 }
 
-uint8_t PPU::drawBackgroundPixel(uint8_t x, uint8_t y) {
+uint8_t PPU::getBackgroundPixel(uint8_t x, uint8_t y) {
   // BG disabled.
   if (!(LCDC & 0x01)) {
     return 0;
@@ -281,7 +286,7 @@ uint8_t PPU::drawBackgroundPixel(uint8_t x, uint8_t y) {
   return shade;
 }
 
-uint8_t PPU::drawWindowPixel(uint8_t x, uint8_t y) {
+uint8_t PPU::getWindowPixel(uint8_t x, uint8_t y) {
   window_drawn = true;
 
   const uint16_t window_x = static_cast<uint16_t>(x) - (WX - 7);
@@ -315,6 +320,10 @@ uint8_t PPU::drawWindowPixel(uint8_t x, uint8_t y) {
   const uint8_t shade = (BGP >> (color * 2)) & 3;
 
   return shade;
+}
+
+uint8_t PPU::getSpritePixel(uint8_t x, uint8_t y, uint8_t screen_color) {
+  return screen_color;
 }
 
 uint64_t PPU::getFrameCount() const { return frame_count; }
