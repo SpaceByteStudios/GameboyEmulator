@@ -172,6 +172,9 @@ void Memory::hexDump(const std::string &filename) const {
 
   constexpr uint32_t address_space_size = 0x10000;
 
+  uint8_t lcdc = ppu->read(0xFF40);
+  ppu->write(0xFF40, 0x00);
+
   for (uint32_t address = 0; address < address_space_size; address += 16) {
 
     // Address
@@ -200,4 +203,6 @@ void Memory::hexDump(const std::string &filename) const {
 
     file << "|\n";
   }
+
+  ppu->write(0xFF40, lcdc);
 }

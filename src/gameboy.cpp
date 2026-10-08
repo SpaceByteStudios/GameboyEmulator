@@ -4,6 +4,8 @@
 #include "timer.h"
 
 #include <cstdint>
+#include <ios>
+#include <iostream>
 #include <memory.h>
 #include <memory>
 
@@ -127,6 +129,26 @@ uint8_t tiles[][16] = {
         0x0F,
         0xF0,
     },
+
+    // Tile 6: Box
+    {
+        0xFF,
+        0xFF,
+        0x81,
+        0x81,
+        0x81,
+        0x81,
+        0x81,
+        0x81,
+        0x81,
+        0x81,
+        0x81,
+        0x81,
+        0x81,
+        0x81,
+        0xFF,
+        0xFF,
+    },
 };
 
 Gameboy::Gameboy(const std::string &path)
@@ -169,7 +191,7 @@ void Gameboy::test_screen() {
   memory.write(0xFF49, 0xE4);
 
   // Write tiles.
-  for (int tile_id = 0; tile_id < 6; tile_id++) {
+  for (int tile_id = 0; tile_id < 7; tile_id++) {
     for (int i = 0; i < 16; i++) {
       memory.write(0x8000 + tile_id * 16 + i, tiles[tile_id][i]);
     }
@@ -179,16 +201,24 @@ void Gameboy::test_screen() {
   for (int y = 0; y < 32; y++) {
     for (int x = 0; x < 32; x++) {
       uint8_t tile_id = (x + y) & 3;
+      tile_id = x % 4;
+      tile_id = 0;
 
       memory.write(0x9800 + y * 32 + x, tile_id);
     }
   }
 
-  // Write OAM Sprite 1
-  memory.write(0xFE00, 0x10);
-  memory.write(0xFE01, 0x08);
-  memory.write(0xFE02, 0x05);
-  memory.write(0xFE03, 0x60);
+  // Write OAM Box
+  memory.write(0xFE00, 0x18);
+  memory.write(0xFE01, 0x10);
+  memory.write(0xFE02, 0x06);
+  memory.write(0xFE03, 0x00);
+
+  // Write OAM Triangle
+  memory.write(0xFE04, 0x1B);
+  memory.write(0xFE05, 0x19);
+  memory.write(0xFE06, 0x05);
+  memory.write(0xFE07, 0x00);
 
   // LCD on
   memory.write(0xFF40, 0x93);
