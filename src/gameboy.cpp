@@ -88,7 +88,7 @@ uint8_t tiles[][16] = {
         0xFF,
     },
 
-    // Tile 4: Sprite 1
+    // Tile 4: Smiley
     {
         0x00,
         0x00,
@@ -106,7 +106,28 @@ uint8_t tiles[][16] = {
         0x00,
         0x00,
         0x00,
-    }};
+    },
+
+    // Tile 5: Triangle
+    {
+        0x18,
+        0x18,
+        0x24,
+        0x24,
+        0x24,
+        0x24,
+        0x42,
+        0x42,
+        0x02,
+        0x40,
+        0x01,
+        0x80,
+        0x01,
+        0x80,
+        0x0F,
+        0xF0,
+    },
+};
 
 Gameboy::Gameboy(const std::string &path)
     : memory(path), cpu(memory), timer(std::make_unique<Timer>(memory)),
@@ -148,7 +169,7 @@ void Gameboy::test_screen() {
   memory.write(0xFF49, 0xE4);
 
   // Write tiles.
-  for (int tile_id = 0; tile_id < 5; tile_id++) {
+  for (int tile_id = 0; tile_id < 6; tile_id++) {
     for (int i = 0; i < 16; i++) {
       memory.write(0x8000 + tile_id * 16 + i, tiles[tile_id][i]);
     }
@@ -166,8 +187,8 @@ void Gameboy::test_screen() {
   // Write OAM Sprite 1
   memory.write(0xFE00, 0x10);
   memory.write(0xFE01, 0x08);
-  memory.write(0xFE02, 0x04);
-  memory.write(0xFE03, 0x10);
+  memory.write(0xFE02, 0x05);
+  memory.write(0xFE03, 0x60);
 
   // LCD on
   memory.write(0xFF40, 0x93);

@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <iostream>
 #include <vector>
 
 #include "memory.h"
@@ -364,7 +365,14 @@ uint8_t PPU::getSpritePixel(uint8_t x, uint8_t y, uint8_t screen_color) {
 
   const uint8_t sprite = sprites[0];
 
-  // No Tile Flip X or Y
+  uint8_t palette = OBP0;
+  bool flip_x = oam[sprite + 3] & 0x20;
+  bool flip_y = oam[sprite + 3] & 0x40;
+
+  if (oam[sprite + 3] & 0x10) {
+    palette = OBP1;
+  }
+
   const uint8_t sprite_x = oam[sprite + 1];
   const uint8_t sprite_y = oam[sprite];
 
@@ -374,18 +382,19 @@ uint8_t PPU::getSpritePixel(uint8_t x, uint8_t y, uint8_t screen_color) {
   const uint8_t tile_number = oam[sprite + 2];
   const uint16_t tile_address = static_cast<uint16_t>(tile_number) * 16;
 
-  const uint16_t row_address = tile_address + pixel_y * 2;
+  uint16_t row_address = tile_address + pixel_y * 2;
+  if (flip_y) {
+    row_address = tile_address + (14 - pixel_y * 2);
+  }
+
   const uint8_t low = vram[row_address];
   const uint8_t high = vram[row_address + 1];
 
-  uint8_t palette = OBP0;
-
-  bool switch_palette = oam[sprite + 3] & 0x10;
-  if (switch_palette) {
-    palette = OBP1;
+  uint8_t bit = 7 - pixel_x;
+  if (flip_x) {
+    bit = pixel_x;
   }
 
-  const uint8_t bit = 7 - pixel_x;
   const uint8_t color = ((low >> bit) & 1) | (((high >> bit) & 1) << 1);
   const uint8_t shade = (palette >> (color * 2)) & 3;
 
