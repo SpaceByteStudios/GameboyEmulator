@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cstdint>
-#include <iostream>
 #include <vector>
 
 #include "memory.h"
@@ -383,12 +382,20 @@ uint8_t PPU::getSpritePixel(uint8_t x, uint8_t y, uint8_t screen_color) {
     const uint8_t pixel_x = x + 8 - sprite_x;
     const uint8_t pixel_y = y + 16 - sprite_y;
 
+    const bool size_is_big = LCDC & 0x4;
+
     const uint8_t tile_number = oam[sprite + 2];
-    const uint16_t tile_address = static_cast<uint16_t>(tile_number) * 16;
+    uint16_t tile_address = static_cast<uint16_t>(tile_number) * 16;
+
+    if (size_is_big) {
+      tile_address = (static_cast<uint16_t>(tile_number) * 16) & 0xFE;
+    }
 
     uint16_t row_address = tile_address + pixel_y * 2;
-    if (flip_y) {
+    if (flip_y && !size_is_big) {
       row_address = tile_address + (14 - pixel_y * 2);
+    } else if (flip_y && size_is_big) {
+      row_address = tile_address + (30 - pixel_y * 2);
     }
 
     const uint8_t low = vram[row_address];

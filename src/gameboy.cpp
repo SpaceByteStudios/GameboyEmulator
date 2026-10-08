@@ -4,8 +4,6 @@
 #include "timer.h"
 
 #include <cstdint>
-#include <ios>
-#include <iostream>
 #include <memory.h>
 #include <memory>
 
@@ -217,7 +215,7 @@ void Gameboy::test_screen() {
   // Write OAM Triangle
   memory.write(0xFE04, 0x1B);
   memory.write(0xFE05, 0x19);
-  memory.write(0xFE06, 0x05);
+  memory.write(0xFE06, 0x04);
   memory.write(0xFE07, 0x00);
 
   // LCD on
