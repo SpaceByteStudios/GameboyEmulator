@@ -134,7 +134,7 @@ void Gameboy::runFrame() {
 
 void Gameboy::test_screen() {
   // LCD off
-  memory.write(0xFF40, 0x91);
+  memory.write(0xFF40, 0x00);
 
   // No scrolling
   memory.write(0xFF42, 0x0);
@@ -143,11 +143,9 @@ void Gameboy::test_screen() {
   // BGP palette
   memory.write(0xFF47, 0xE4);
 
-  // OBP0 palette
+  // OBP palettes
   memory.write(0xFF48, 0xE4);
-
-  // OBP1 palette
-  memory.write(0xFF49, 0x24);
+  memory.write(0xFF49, 0xE4);
 
   // Write tiles.
   for (int tile_id = 0; tile_id < 5; tile_id++) {
@@ -169,7 +167,7 @@ void Gameboy::test_screen() {
   memory.write(0xFE00, 0x10);
   memory.write(0xFE01, 0x08);
   memory.write(0xFE02, 0x04);
-  memory.write(0xFE03, 0x00);
+  memory.write(0xFE03, 0x10);
 
   // LCD on
   memory.write(0xFF40, 0x93);

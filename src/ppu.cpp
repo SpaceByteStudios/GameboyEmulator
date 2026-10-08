@@ -196,6 +196,7 @@ void PPU::updateMode() {
 
 void PPU::oamSearch() {
   oam_search.clear();
+
   const bool size_is_big = LCDC & 0x4;
   const uint8_t height = size_is_big ? 16 : 8;
 
@@ -322,8 +323,79 @@ uint8_t PPU::getWindowPixel(uint8_t x, uint8_t y) {
   return shade;
 }
 
+// TODO
+// 8*16 Pixel Sprites working
+
 uint8_t PPU::getSpritePixel(uint8_t x, uint8_t y, uint8_t screen_color) {
-  return screen_color;
+  std::vector<uint8_t> sprites;
+
+  // Get relevant Sprites
+  for (int i = 0; i < oam_search.size(); i++) {
+    uint8_t obj_adress = oam_search[i];
+
+    uint8_t sprite_x = oam[obj_adress + 1];
+    uint8_t sprite_y = oam[obj_adress];
+
+    const bool size_is_big = LCDC & 0x4;
+    const uint8_t height = size_is_big ? 16 : 8;
+
+    if (y + 16 >= sprite_y && y + 16 < sprite_y + height) {
+      if (x + 8 >= sprite_x && x + 8 < sprite_x + 8) {
+        sprites.push_back(oam_search[i]);
+      }
+    }
+  }
+
+  // Filter by Priority
+  if (screen_color > 0) {
+    for (int i = sprites.size() - 1; i >= 0; i--) {
+      bool priority = oam[sprites[i] + 3] & 0x80;
+
+      if (priority) {
+        sprites.pop_back();
+      }
+    }
+  }
+
+  // Just use first Sprite for now
+  if (sprites.size() == 0) {
+    return screen_color;
+  }
+
+  const uint8_t sprite = sprites[0];
+
+  // No Tile Flip X or Y
+  const uint8_t sprite_x = oam[sprite + 1];
+  const uint8_t sprite_y = oam[sprite];
+
+  const uint8_t pixel_x = x + 8 - sprite_x;
+  const uint8_t pixel_y = y + 16 - sprite_y;
+
+  const uint8_t tile_number = oam[sprite + 2];
+  const uint16_t tile_address = static_cast<uint16_t>(tile_number) * 16;
+
+  const uint16_t row_address = tile_address + pixel_y * 2;
+  const uint8_t low = vram[row_address];
+  const uint8_t high = vram[row_address + 1];
+
+  uint8_t palette = OBP0;
+
+  bool switch_palette = oam[sprite + 3] & 0x10;
+  if (switch_palette) {
+    palette = OBP1;
+  }
+
+  const uint8_t bit = 7 - pixel_x;
+  const uint8_t color = ((low >> bit) & 1) | (((high >> bit) & 1) << 1);
+  const uint8_t shade = (palette >> (color * 2)) & 3;
+
+  // Later continue to next sprite
+  // If all transparent return screen_color
+  if (color == 0) {
+    return screen_color;
+  } else {
+    return shade;
+  }
 }
 
 uint64_t PPU::getFrameCount() const { return frame_count; }
