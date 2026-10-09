@@ -1,5 +1,6 @@
 #include "gameboy.h"
 #include "cpu.h"
+#include "joypad.h"
 #include "ppu.h"
 #include "timer.h"
 
@@ -230,6 +231,8 @@ void Gameboy::test_screen() {
 
 std::vector<uint8_t> Gameboy::getScreen() { return ppu->get_screen(); }
 
-void Gameboy::updateJoypadInput() { memory.updateJoypadInput(); }
+void Gameboy::updateJoypadInput(Joypad &joypad) {
+  memory.updateJoypadInput(joypad);
+}
 
 void Gameboy::hexDump(const std::string &filename) { memory.hexDump(filename); }

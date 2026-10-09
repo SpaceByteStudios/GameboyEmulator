@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "SDL3/SDL_keycode.h"
 #include "SDL3/SDL_pixels.h"
 #include "SDL3/SDL_rect.h"
 #include "SDL3/SDL_render.h"
@@ -52,4 +53,39 @@ void Renderer::draw() {
   SDL_RenderPresent(renderer);
 }
 
-void Renderer::updateInput() {}
+void Renderer::updateInput(const SDL_KeyboardEvent &event) {
+  Joypad joypad;
+
+  bool pressed = event.type == SDL_EVENT_KEY_DOWN;
+
+  switch (event.key) {
+  case SDLK_RIGHT:
+    joypad.right = pressed;
+    break;
+  case SDLK_LEFT:
+    joypad.left = pressed;
+    break;
+  case SDLK_UP:
+    joypad.up = pressed;
+    break;
+  case SDLK_DOWN:
+    joypad.down = pressed;
+    break;
+  case SDLK_Z:
+    joypad.a = pressed;
+    break;
+  case SDLK_X:
+    joypad.b = pressed;
+    break;
+  case SDLK_RETURN:
+    joypad.start = pressed;
+    break;
+  case SDLK_BACKSPACE:
+    joypad.select = pressed;
+    break;
+  default:
+    break;
+  }
+
+  gameboy.updateJoypadInput(joypad);
+}

@@ -1,5 +1,7 @@
 #include "memory.h"
 #include "cartridge.h"
+#include "joypad.h"
+
 #include <cstdint>
 #include <fstream>
 #include <iomanip>
@@ -20,17 +22,21 @@ uint8_t Memory::read(uint16_t address) const {
 
     // Joypad I/O
     if (address == 0xFF00) {
-      if (buttons_selected && dpad_selected) {
-        return 0x0F;
+      uint8_t res = 0xC0 | joypad_select | 0x0F;
+
+      // Direction buttons: Right, Left, Up, Down
+      if (!(joypad_select & 0x10)) {
+        uint8_t directions = (joypad_input >> 4) & 0x0F;
+        res &= ~(directions & 0x0F);
       }
 
-      if (!buttons_selected) {
-        return joypad_input & 0x0F;
+      // Action buttons: A, B, Select, Start
+      if (!(joypad_select & 0x20)) {
+        uint8_t buttons = joypad_input & 0x0F;
+        res &= ~(buttons & 0x0F);
       }
 
-      if (!dpad_selected) {
-        return (joypad_input & 0xF0) >> 4;
-      }
+      return res;
     }
 
     // Timer I/O
@@ -108,8 +114,8 @@ void Memory::write(uint16_t address, uint8_t value) {
 
     // Joypad I/O
     if (address == 0xFF00) {
-      buttons_selected = value & 0x20;
-      dpad_selected = value & 0x10;
+      joypad_select = (value & 0x30);
+      return;
     }
 
     // Timer I/O
@@ -201,7 +207,41 @@ void Memory::setTimer(Timer *timer) { this->timer = timer; }
 
 void Memory::setPPU(PPU *ppu) { this->ppu = ppu; }
 
-void Memory::updateJoypadInput() {}
+void Memory::updateJoypadInput(Joypad &joypad) {
+  joypad_input = 0;
+
+  if (joypad.down) {
+    joypad_input |= (1 << 7);
+  }
+
+  if (joypad.up) {
+    joypad_input |= (1 << 6);
+  }
+
+  if (joypad.left) {
+    joypad_input |= (1 << 5);
+  }
+
+  if (joypad.right) {
+    joypad_input |= (1 << 4);
+  }
+
+  if (joypad.start) {
+    joypad_input |= (1 << 3);
+  }
+
+  if (joypad.select) {
+    joypad_input |= (1 << 2);
+  }
+
+  if (joypad.b) {
+    joypad_input |= (1 << 1);
+  }
+
+  if (joypad.a) {
+    joypad_input |= 1;
+  }
+}
 
 void Memory::hexDump(const std::string &filename) {
   std::ofstream file(filename);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cpu.h"
+#include "joypad.h"
 #include "memory.h"
 #include "ppu.h"
 #include "timer.h"
@@ -17,7 +18,7 @@ public:
 
   std::vector<uint8_t> getScreen();
 
-  void updateJoypadInput();
+  void updateJoypadInput(Joypad &joypad);
 
   void hexDump(const std::string &filename);
 

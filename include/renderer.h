@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "SDL3/SDL_events.h"
 #include "gameboy.h"
 
 class Renderer {
@@ -12,7 +13,7 @@ public:
   ~Renderer();
 
   void draw();
-  void updateInput();
+  void updateInput(const SDL_KeyboardEvent &event);
 
 private:
   SDL_Window *window = nullptr;

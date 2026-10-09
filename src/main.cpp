@@ -4,6 +4,7 @@
 
 #include <SDL3/SDL.h>
 
+#include "SDL3/SDL_events.h"
 #include "gameboy.h"
 #include "renderer.h"
 
@@ -31,12 +32,13 @@ int main() {
       if (event.type == SDL_EVENT_QUIT) {
         running = false;
       }
+
+      renderer.updateInput(event.key);
     }
 
     gameboy.runFrame();
 
     renderer.draw();
-    renderer.updateInput();
 
     auto frame_end = std::chrono::steady_clock::now();
     std::chrono::duration<double> frame_time = frame_end - frame_start;

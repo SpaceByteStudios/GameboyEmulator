@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "cartridge.h"
+#include "joypad.h"
 #include "ppu.h"
 #include "timer.h"
 
@@ -21,7 +22,7 @@ public:
   void setTimer(Timer *timer);
   void setPPU(PPU *ppu);
 
-  void updateJoypadInput();
+  void updateJoypadInput(Joypad &joypad);
 
   void hexDump(const std::string &filename);
 
@@ -38,9 +39,8 @@ private:
 
   // Down, Up, Left, Right
   // Start, Select, B, A
-  uint8_t joypad_input;
-  bool buttons_selected;
-  bool dpad_selected;
+  uint8_t joypad_input = 0;
+  uint8_t joypad_select = 0;
 
   uint8_t IF;
   uint8_t IE;
