@@ -12,9 +12,48 @@ Memory::Memory(const std::string &path)
 }
 
 uint8_t Memory::read(uint16_t address) const {
-  // HRAM
-  if ((0xFF80 <= address) && (address < 0xFFFF)) {
-    return hram[address - 0xFF80];
+  if (address >= 0xFF00) {
+    // HRAM
+    if ((0xFF80 <= address) && (address < 0xFFFF)) {
+      return hram[address - 0xFF80];
+    }
+
+    // Joypad I/O
+    if (address == 0xFF00) {
+      if (buttons_selected && dpad_selected) {
+        return 0x0F;
+      }
+
+      if (!buttons_selected) {
+        return joypad_input & 0x0F;
+      }
+
+      if (!dpad_selected) {
+        return (joypad_input & 0xF0) >> 4;
+      }
+    }
+
+    // Timer I/O
+    if (address >= 0xFF04 && address <= 0xFF07) {
+      return timer->read(address);
+    }
+
+    // PPU I/O
+    if (address >= 0xFF40 && address <= 0xFF4B) {
+      return ppu->read(address);
+    }
+
+    // IF
+    if (address == 0xFF0F) {
+      return IF | 0xE0;
+    }
+
+    // IE
+    if (address == 0xFFFF) {
+      return IE;
+    }
+
+    return 0xFF;
   }
 
   if (oam_dma_running) {
@@ -56,33 +95,47 @@ uint8_t Memory::read(uint16_t address) const {
     return 0xFF;
   }
 
-  // Timer I/O
-  if (address >= 0xFF04 && address <= 0xFF07) {
-    return timer->read(address);
-  }
-
-  // PPU I/O
-  if (address >= 0xFF40 && address <= 0xFF4B) {
-    return ppu->read(address);
-  }
-
-  // IF
-  if (address == 0xFF0F) {
-    return IF | 0xE0;
-  }
-
-  // IE
-  if (address == 0xFFFF) {
-    return IE;
-  }
-
   return 0xFF;
 }
 
 void Memory::write(uint16_t address, uint8_t value) {
-  // HRAM
-  if ((0xFF80 <= address) && (address < 0xFFFF)) {
-    hram[address - 0xFF80] = value;
+  if (address >= 0xFF00) {
+    // HRAM
+    if ((0xFF80 <= address) && (address < 0xFFFF)) {
+      hram[address - 0xFF80] = value;
+      return;
+    }
+
+    // Joypad I/O
+    if (address == 0xFF00) {
+      buttons_selected = value & 0x20;
+      dpad_selected = value & 0x10;
+    }
+
+    // Timer I/O
+    if (address >= 0xFF04 && address <= 0xFF07) {
+      timer->write(address, value);
+      return;
+    }
+
+    // PPU I/O
+    if (address >= 0xFF40 && address <= 0xFF4B) {
+      ppu->write(address, value);
+      return;
+    }
+
+    // IF
+    if (address == 0xFF0F) {
+      IF = value & 0x1F;
+      return;
+    }
+
+    // IE
+    if (address == 0xFFFF) {
+      IE = value;
+      return;
+    }
+
     return;
   }
 
@@ -130,30 +183,6 @@ void Memory::write(uint16_t address, uint8_t value) {
   if ((0xFEA0 <= address) && (address < 0xFF00)) {
     return;
   }
-
-  // Timer I/O
-  if (address >= 0xFF04 && address <= 0xFF07) {
-    timer->write(address, value);
-    return;
-  }
-
-  // PPU I/O
-  if (address >= 0xFF40 && address <= 0xFF4B) {
-    ppu->write(address, value);
-    return;
-  }
-
-  // IF
-  if (address == 0xFF0F) {
-    IF = value & 0x1F;
-    return;
-  }
-
-  // IE
-  if (address == 0xFFFF) {
-    IE = value;
-    return;
-  }
 }
 
 uint16_t Memory::read16(uint16_t address) const {
@@ -171,6 +200,8 @@ void Memory::write16(uint16_t address, uint16_t value) {
 void Memory::setTimer(Timer *timer) { this->timer = timer; }
 
 void Memory::setPPU(PPU *ppu) { this->ppu = ppu; }
+
+void Memory::updateJoypadInput() {}
 
 void Memory::hexDump(const std::string &filename) {
   std::ofstream file(filename);

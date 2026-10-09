@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cstdint>
-#include <iostream>
 #include <vector>
 
 #include "memory.h"
@@ -8,28 +7,28 @@
 
 PPU::PPU(Memory &memory)
     : memory(memory), vram(0x2000, 0), oam(0xA0, 0), screen(160 * 144, 0),
-      oam_search() {
-  oam_dma_transfer_timer = 0;
-}
+      oam_search() {}
 
 void PPU::tick(uint8_t cycles) {
   const bool lcd_on = LCDC & 0x80;
+
+  if (memory.oam_dma_running) {
+    oam_dma_transfer_timer -= cycles;
+
+    if (oam_dma_transfer_timer <= 0) {
+      oam_dma_transfer_timer = 0;
+      memory.oam_dma_running = false;
+    }
+  }
 
   if (!lcd_on) {
     return;
   }
 
   for (uint8_t i = 0; i < cycles * 4; ++i) {
-    if (memory.oam_dma_running) {
-      oam_dma_transfer_timer -= 1;
-
-      if (oam_dma_transfer_timer <= 0) {
-        oam_dma_transfer_timer = 0;
-        memory.oam_dma_running = false;
-      }
-    }
 
     updateMode();
+    updateInterrupts();
 
     if (ppu_mode == 2 && dots_amount == 0) {
       oamSearch();
@@ -49,18 +48,11 @@ void PPU::tick(uint8_t cycles) {
     if (dots_amount >= 456) {
       dots_amount = 0;
 
-      // TODO
-      // Add LYC STAT Interrupt
       LY += 1;
 
       if (window_drawn) {
         window_line += 1;
         window_drawn = false;
-      }
-
-      if (LY == 144) {
-        uint8_t IF = memory.read(0xFF0F);
-        memory.write(0xFF0F, IF | 0x01);
       }
 
       if (LY >= 154) {
@@ -204,6 +196,31 @@ void PPU::updateMode() {
   } else {
     ppu_mode = 0;
   }
+
+  // Update ppu_mode
+  STAT = (STAT & 0xFC) + ppu_mode;
+}
+
+void PPU::updateInterrupts() {
+  if (LY == 144) {
+    uint8_t IF = memory.read(0xFF0F);
+    memory.write(0xFF0F, IF | 0x01);
+  }
+
+  // Update LYC == LY
+  bool lyc_equals_ly = LYC == LY;
+  STAT = (STAT & 0xFB) + (lyc_equals_ly << 2);
+
+  bool stat_interrupt =
+      (lyc_equals_ly && (STAT & 0x40)) | (ppu_mode == 2 && (STAT & 0x20)) |
+      (ppu_mode == 1 && (STAT & 0x10)) | (ppu_mode == 0 && (STAT & 0x08));
+
+  if (stat_interrupt && !previous_stat_interrupt) {
+    uint8_t IF = memory.read(0xFF0F);
+    memory.write(0xFF0F, IF | 0x02);
+  }
+
+  previous_stat_interrupt = stat_interrupt;
 }
 
 void PPU::oamSearch() {

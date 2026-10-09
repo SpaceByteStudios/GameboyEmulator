@@ -1,6 +1,5 @@
 #include <cstdint>
 #include <iostream>
-#include <stdbool.h>
 
 #include "cpu.h"
 #include "memory.h"
@@ -1035,6 +1034,8 @@ uint8_t CPU::execute(uint8_t opcode) {
       return 1;
     }
   }
+
+  std::cout << "Unsupported Instruction: " << opcode << std::endl;
 
   return 0;
 }

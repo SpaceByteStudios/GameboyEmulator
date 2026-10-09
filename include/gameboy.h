@@ -17,6 +17,8 @@ public:
 
   std::vector<uint8_t> getScreen();
 
+  void updateJoypadInput();
+
   void hexDump(const std::string &filename);
 
 private:

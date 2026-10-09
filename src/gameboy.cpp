@@ -230,4 +230,6 @@ void Gameboy::test_screen() {
 
 std::vector<uint8_t> Gameboy::getScreen() { return ppu->get_screen(); }
 
+void Gameboy::updateJoypadInput() { memory.updateJoypadInput(); }
+
 void Gameboy::hexDump(const std::string &filename) { memory.hexDump(filename); }

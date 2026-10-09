@@ -21,6 +21,8 @@ public:
   void setTimer(Timer *timer);
   void setPPU(PPU *ppu);
 
+  void updateJoypadInput();
+
   void hexDump(const std::string &filename);
 
   bool oam_dma_running;
@@ -33,6 +35,12 @@ private:
 
   Timer *timer = nullptr;
   PPU *ppu = nullptr;
+
+  // Down, Up, Left, Right
+  // Start, Select, B, A
+  uint8_t joypad_input;
+  bool buttons_selected;
+  bool dpad_selected;
 
   uint8_t IF;
   uint8_t IE;

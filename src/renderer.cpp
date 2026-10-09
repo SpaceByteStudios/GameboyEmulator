@@ -51,3 +51,5 @@ void Renderer::draw() {
   SDL_RenderTexture(renderer, screen_texture, nullptr, &dst);
   SDL_RenderPresent(renderer);
 }
+
+void Renderer::updateInput() {}

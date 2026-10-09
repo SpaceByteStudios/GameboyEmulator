@@ -10,7 +10,7 @@
 constexpr double target_frame_time = 1.0 / 60.0;
 
 int main() {
-  Gameboy gameboy = Gameboy("./roms/test_roms/oam_dma_transfer.gb");
+  Gameboy gameboy = Gameboy("./roms/games/Tetris.gb");
   Renderer renderer = Renderer(gameboy);
 
   // gameboy.test_screen();
@@ -36,6 +36,7 @@ int main() {
     gameboy.runFrame();
 
     renderer.draw();
+    renderer.updateInput();
 
     auto frame_end = std::chrono::steady_clock::now();
     std::chrono::duration<double> frame_time = frame_end - frame_start;

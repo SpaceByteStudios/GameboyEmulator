@@ -12,6 +12,7 @@ public:
   ~Renderer();
 
   void draw();
+  void updateInput();
 
 private:
   SDL_Window *window = nullptr;

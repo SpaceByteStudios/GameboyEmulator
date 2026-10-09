@@ -39,8 +39,7 @@ private:
   uint16_t dots_amount = 0;
 
   std::vector<uint8_t> oam_search;
-  uint8_t oam_dma_transfer_timer;
-
+  int oam_dma_transfer_timer = 0;
   uint8_t LCDC = 0;
   uint8_t STAT = 0;
 
@@ -61,8 +60,10 @@ private:
 
   uint8_t window_line = 0;
   bool window_drawn = false;
+  bool previous_stat_interrupt = false;
 
   void updateMode();
+  void updateInterrupts();
   void oamSearch();
   void runOamDmaTransfer();
 
