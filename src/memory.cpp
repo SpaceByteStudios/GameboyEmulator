@@ -24,13 +24,13 @@ uint8_t Memory::read(uint16_t address) const {
     if (address == 0xFF00) {
       uint8_t res = 0xC0 | joypad_select | 0x0F;
 
-      // Direction buttons: Right, Left, Up, Down
+      // Direction buttons: Down, Up, Left, Right
       if (!(joypad_select & 0x10)) {
         uint8_t directions = (joypad_input >> 4) & 0x0F;
         res &= ~(directions & 0x0F);
       }
 
-      // Action buttons: A, B, Select, Start
+      // Action buttons: Start, Select, B, A
       if (!(joypad_select & 0x20)) {
         uint8_t buttons = joypad_input & 0x0F;
         res &= ~(buttons & 0x0F);
