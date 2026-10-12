@@ -1,4 +1,5 @@
 #include "gameboy.h"
+#include "apu.h"
 #include "cpu.h"
 #include "joypad.h"
 #include "ppu.h"
@@ -152,10 +153,11 @@ uint8_t tiles[][16] = {
 
 Gameboy::Gameboy(const std::string &path)
     : memory(path), cpu(memory), timer(std::make_unique<Timer>(memory)),
-      ppu(std::make_unique<PPU>(memory)) {
+      ppu(std::make_unique<PPU>(memory)), apu(std::make_unique<APU>(memory)) {
 
   memory.setTimer(timer.get());
   memory.setPPU(ppu.get());
+  memory.setAPU(apu.get());
 }
 
 void Gameboy::step() {
@@ -164,6 +166,7 @@ void Gameboy::step() {
 
   timer->tick(cycles);
   ppu->tick(cycles);
+  apu->tick(cycles);
 }
 
 void Gameboy::runFrame() {

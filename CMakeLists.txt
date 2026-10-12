@@ -30,6 +30,7 @@ add_executable(
     src/memory.cpp
     src/cartridge.cpp
     src/ppu.cpp
+    src/apu.cpp
 )
 
 target_include_directories(

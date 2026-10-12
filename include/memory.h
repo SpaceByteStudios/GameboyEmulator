@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "apu.h"
 #include "cartridge.h"
 #include "joypad.h"
 #include "ppu.h"
@@ -21,6 +22,7 @@ public:
 
   void setTimer(Timer *timer);
   void setPPU(PPU *ppu);
+  void setAPU(APU *apu);
 
   void updateJoypadInput(Joypad &joypad);
 
@@ -36,6 +38,7 @@ private:
 
   Timer *timer = nullptr;
   PPU *ppu = nullptr;
+  APU *apu = nullptr;
 
   // Down, Up, Left, Right
   // Start, Select, B, A

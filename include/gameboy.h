@@ -1,10 +1,12 @@
 #pragma once
 
+#include "apu.h"
 #include "cpu.h"
 #include "joypad.h"
 #include "memory.h"
 #include "ppu.h"
 #include "timer.h"
+
 #include <memory>
 
 class Gameboy {
@@ -29,4 +31,5 @@ private:
 
   std::unique_ptr<Timer> timer;
   std::unique_ptr<PPU> ppu;
+  std::unique_ptr<APU> apu;
 };

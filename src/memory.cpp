@@ -44,6 +44,11 @@ uint8_t Memory::read(uint16_t address) const {
       return timer->read(address);
     }
 
+    // APU I/O
+    if (address >= 0xFF10 && address <= 0xFF3F) {
+      return apu->read(address);
+    }
+
     // PPU I/O
     if (address >= 0xFF40 && address <= 0xFF4B) {
       return ppu->read(address);
@@ -121,6 +126,12 @@ void Memory::write(uint16_t address, uint8_t value) {
     // Timer I/O
     if (address >= 0xFF04 && address <= 0xFF07) {
       timer->write(address, value);
+      return;
+    }
+
+    // APU I/O
+    if (address >= 0xFF10 && address <= 0xFF3F) {
+      apu->write(address, value);
       return;
     }
 
@@ -206,6 +217,8 @@ void Memory::write16(uint16_t address, uint16_t value) {
 void Memory::setTimer(Timer *timer) { this->timer = timer; }
 
 void Memory::setPPU(PPU *ppu) { this->ppu = ppu; }
+
+void Memory::setAPU(APU *apu) { this->apu = apu; }
 
 void Memory::updateJoypadInput(Joypad &joypad) {
   joypad_input = 0;
