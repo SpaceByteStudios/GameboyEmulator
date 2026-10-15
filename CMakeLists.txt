@@ -23,6 +23,7 @@ add_executable(
     gb_emulator
     src/main.cpp
     src/renderer.cpp
+    src/player.cpp
     src/gameboy.cpp
     src/cpu.cpp
     src/registers.cpp

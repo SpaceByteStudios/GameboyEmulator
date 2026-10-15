@@ -1,57 +1,58 @@
 #include <chrono>
 #include <iostream>
-#include <thread>
 
 #include <SDL3/SDL.h>
 
 #include "SDL3/SDL_events.h"
 #include "gameboy.h"
+#include "player.h"
 #include "renderer.h"
 
-constexpr double target_frame_time = 1.0 / 60.0;
+constexpr std::chrono::nanoseconds frame_duration =
+    std::chrono::nanoseconds(1'000'000'000 / 60);
 
 int main() {
-  Gameboy gameboy = Gameboy("./roms/games/Tetris.gb");
-  Renderer renderer = Renderer(gameboy);
-
-  // gameboy.test_screen();
-
-  if (!SDL_Init(SDL_INIT_VIDEO)) {
+  if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
     std::cerr << "SDL_Init failed: " << SDL_GetError() << '\n';
     return 1;
   }
 
-  bool running = true;
+  {
+    Gameboy gameboy = Gameboy("./roms/games/Tetris.gb");
+    Renderer renderer = Renderer(gameboy);
+    Player player = Player(gameboy);
 
-  while (running) {
-    auto frame_start = std::chrono::steady_clock::now();
+    bool running = true;
 
-    SDL_Event event;
+    while (running) {
+      auto frame_start = std::chrono::steady_clock::now();
 
-    while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_EVENT_QUIT) {
-        running = false;
+      SDL_Event event;
+
+      while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_EVENT_QUIT) {
+          running = false;
+        }
+
+        renderer.updateInput(event.key);
       }
 
-      renderer.updateInput(event.key);
+      gameboy.runFrame();
+
+      renderer.draw();
+      player.submitAudio();
+
+      const auto elapsed = std::chrono::steady_clock::now() - frame_start;
+
+      if (elapsed < frame_duration) {
+        const auto remaining = frame_duration - elapsed;
+
+        SDL_DelayNS(static_cast<Uint64>(remaining.count()));
+      }
     }
 
-    gameboy.runFrame();
-
-    renderer.draw();
-
-    auto frame_end = std::chrono::steady_clock::now();
-    std::chrono::duration<double> frame_time = frame_end - frame_start;
-
-    double remaining_time = target_frame_time - frame_time.count();
-
-    if (remaining_time > 0.0) {
-      std::this_thread::sleep_for(
-          std::chrono::duration<double>(remaining_time));
-    }
+    gameboy.hexDump("memory_dump.txt");
   }
-
-  gameboy.hexDump("memory_dump.txt");
 
   SDL_Quit();
   return 0;

@@ -17,7 +17,6 @@ Renderer::Renderer(Gameboy &gameboy) : gameboy(gameboy) {
 
   if (!SDL_CreateWindowAndRenderer("Game Boy Emulator", 160 * 4, 144 * 4, 0,
                                    &window, &renderer)) {
-    SDL_Quit();
     throw std::runtime_error("SDL_CreateWindowAndRenderer failed");
   }
 
