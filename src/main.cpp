@@ -58,6 +58,11 @@ int main(int argc, char *argv[]) {
 
       const auto elapsed = std::chrono::steady_clock::now() - frame_start;
 
+      std::cout << "Frame: "
+                << std::chrono::duration<double, std::milli>(elapsed).count()
+                << " ms, queued: "
+                << SDL_GetAudioStreamQueued(player.getStream()) << " bytes\n";
+
       if (elapsed < frame_duration) {
         const auto remaining = frame_duration - elapsed;
         SDL_DelayNS(static_cast<Uint64>(remaining.count()));

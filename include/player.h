@@ -9,9 +9,12 @@ public:
   ~Player();
 
   void submitAudio();
+  SDL_AudioStream *getStream();
 
 private:
   SDL_AudioStream *stream;
 
   Gameboy &gameboy;
+
+  double phase;
 };
