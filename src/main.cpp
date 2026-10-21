@@ -1,4 +1,5 @@
 #include <chrono>
+#include <filesystem>
 #include <iostream>
 
 #include <SDL3/SDL.h>
@@ -11,14 +12,27 @@
 constexpr std::chrono::nanoseconds frame_duration =
     std::chrono::nanoseconds(1'000'000'000 / 60);
 
-int main() {
+int main(int argc, char *argv[]) {
+  if (argc < 2) {
+    std::cerr << "Usage: " << argv[0] << " <rom-path>\n";
+    return 1;
+  }
+
+  const std::filesystem::path rom_path = argv[1];
+
+  if (!std::filesystem::exists(rom_path) ||
+      !std::filesystem::is_regular_file(rom_path)) {
+    std::cerr << "Error: ROM file not found: " << rom_path << '\n';
+    return 1;
+  }
+
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
     std::cerr << "SDL_Init failed: " << SDL_GetError() << '\n';
     return 1;
   }
 
   {
-    Gameboy gameboy = Gameboy("./roms/games/Tetris.gb");
+    Gameboy gameboy = Gameboy(rom_path.string());
     Renderer renderer = Renderer(gameboy);
     Player player = Player(gameboy);
 
@@ -46,7 +60,6 @@ int main() {
 
       if (elapsed < frame_duration) {
         const auto remaining = frame_duration - elapsed;
-
         SDL_DelayNS(static_cast<Uint64>(remaining.count()));
       }
     }

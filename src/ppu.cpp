@@ -363,9 +363,6 @@ uint8_t PPU::getWindowPixel(uint8_t x, uint8_t y) {
   return shade;
 }
 
-// TODO
-// 8*16 Pixel Sprites working
-
 uint8_t PPU::getSpritePixel(uint8_t x, uint8_t y, uint8_t screen_color) {
   std::vector<uint8_t> sprites;
 

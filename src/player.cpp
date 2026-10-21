@@ -32,7 +32,7 @@ void Player::submitAudio() {
 
   for (int i = 0; i < samples_per_frame; ++i) {
     // 50% duty cycle: half high, half low.
-    const float sample = (phase < 0.5) ? 0.5f : -0.5f;
+    const float sample = (phase < 0.5) ? 0.005f : -0.005f;
 
     // Interleaved stereo: left, right.
     samples.push_back(sample);
